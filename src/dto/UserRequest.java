@@ -1,20 +1,15 @@
 package dto;
 
-public class UsuarioResponse {
-    private int id;
+public class UserRequest {
+
     private String email;
+    private String password;
     private String firstName;
     private String lastName;
     private String cpf;
     private String phoneNumber;
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
+    public UserRequest() {}
 
     public String getEmail() {
         return email;
@@ -22,6 +17,14 @@ public class UsuarioResponse {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getFirstName() {

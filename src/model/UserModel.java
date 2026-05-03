@@ -1,27 +1,23 @@
-package dto;
+package model;
 
-public class UsuarioRequest {
-    private String email;
-    private String password;
+public class UserModel {
+
+    private int id;
     private String firstName;
     private String lastName;
+    private String email;
+    private String password;
     private String cpf;
     private String phoneNumber;
 
-    public String getEmail() {
-        return email;
+    public UserModel() {}
+
+    public int getId() {
+        return id;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getFirstName() {
@@ -38,6 +34,23 @@ public class UsuarioRequest {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    // ⚠️ cuidado: ideal não expor isso em APIs
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getCpf() {

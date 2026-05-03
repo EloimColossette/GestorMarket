@@ -4,8 +4,10 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class AuthFilter extends Filter {
+
     @Override
     public String description() {
         return "Filtro de autenticação JWT";
@@ -17,11 +19,7 @@ public class AuthFilter extends Filter {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
 
-        // 🔓 Rotas públicas
-        if (
-                path.equals("/login") ||
-                        (path.equals("/usuarios") && method.equals("POST"))
-        ) {
+        if (isPublicRoute(path, method)) {
             chain.doFilter(exchange);
             return;
         }
@@ -29,34 +27,40 @@ public class AuthFilter extends Filter {
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendResponse(exchange, "Token não informado", 401);
-            return; // 🔥 ESSENCIAL
+            sendResponse(exchange, "Token ausente ou inválido", 401);
+            return;
         }
 
-        String token = authHeader.replace("Bearer ", "").trim(); // 🔥 trim aqui
+        String token = authHeader.replace("Bearer ", "").trim();
 
         try {
             String email = JwtUtil.validateToken(token);
 
             if (email == null) {
                 sendResponse(exchange, "Token inválido", 401);
-                return; // 🔥 ESSENCIAL
+                return;
             }
 
-            chain.doFilter(exchange); // só continua se OK
+            chain.doFilter(exchange);
 
         } catch (Exception e) {
             e.printStackTrace();
             sendResponse(exchange, "Token inválido", 401);
-            // NÃO chama chain aqui
         }
     }
 
-    private void sendResponse(HttpExchange exchange, String message, int status) throws IOException{
-        exchange.sendResponseHeaders(status, message.getBytes().length);
-        OutputStream os = exchange.getResponseBody();
-        os.write(message.getBytes());
-        os.close();
+    private boolean isPublicRoute(String path, String method) {
+        return path.equals("/login")
+                || (path.equals("/usuarios") && method.equals("POST"));
     }
 
+    private void sendResponse(HttpExchange exchange, String message, int status) throws IOException {
+        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+
+        exchange.sendResponseHeaders(status, bytes.length);
+
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
+        }
+    }
 }

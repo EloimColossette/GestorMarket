@@ -39,7 +39,7 @@ async function resetPassword() {
     btn.disabled = true;
 
     try {
-        const response = await fetch("http://localhost:8080/html/password/reset-password", {
+        const response = await fetch("http://localhost:8080/password/reset-password", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

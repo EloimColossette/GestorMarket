@@ -1,59 +1,109 @@
 package service;
 
-import jakarta.mail.*;
-import jakarta.mail.internet.*;
-import java.util.Properties;
+import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.*;
+import envloader.EnvLoader;
 
+import java.io.IOException;
+import java.util.logging.Logger;
 
 public class EmailService {
 
-    private static final String EMAIL_REMETENTE = "eloimxrl19@gmail.com";
-    private static final String EMAIL_SENHA = "meyuvqxvhejbkasi";
-    private static final String SMTP_HOST = "smtp.gmail.com";
-    private static final String SMTP_PORT = "587";
+    private static final Logger logger = Logger.getLogger(EmailService.class.getName());
 
-    public static void enviarEmailRecuperacao(String destinatario, String token) throws Exception {
-        String link = "http://localhost:8080/reset-password.html?token=" + token;
+    private final String apiKey;
+    private final String emailFrom;
+    private final String emailFromName;
+    private final String baseUrl;
 
-        String corpo = """
-                <html>
-                  <body style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2>Recuperação de Senha</h2>
-                    <p>Recebemos uma solicitação para redefinir sua senha.</p>
-                    <p>Clique no botão abaixo ou use o token manualmente:</p>
-                    <a href="%s"
-                       style="background:#4F46E5;color:white;padding:12px 24px;
-                              border-radius:6px;text-decoration:none;display:inline-block;
-                              margin:16px 0;">
-                      Redefinir Senha
-                    </a>
-                    <p>Ou copie o token: <strong>%s</strong></p>
-                    <p style="color:#888;font-size:12px;">
-                      Este link expira em 15 minutos. Se não foi você, ignore este email.
-                    </p>
-                  </body>
-                </html>
-                """.formatted(link, token);
+    public EmailService() {
+        this.apiKey = EnvLoader.get("EMAIL_API_KEY");
+        this.emailFrom = EnvLoader.get("EMAIL_FROM");
+        this.emailFromName = EnvLoader.get("EMAIL_FROM_NAME"); // novo
+        this.baseUrl = EnvLoader.get("APP_BASE_URL"); // novo
 
-        Properties props = new Properties();
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.starttls.enable", "true");
-        props.put("mail.smtp.host", SMTP_HOST);
-        props.put("mail.smtp.port", SMTP_PORT);
+        validarConfiguracao();
+    }
 
-        Session session = Session.getInstance(props, new Authenticator() {
-            protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(EMAIL_REMETENTE, EMAIL_SENHA);
+    private void validarConfiguracao() {
+        if (apiKey == null || emailFrom == null) {
+            throw new RuntimeException("Configuração de email inválida no .env");
+        }
+    }
+
+    public void enviarEmailRecuperacao(String destinatario, String token) throws IOException {
+
+        String link = baseUrl + "/html/reset-password.html?token=" + token;
+
+        logger.info("[EMAIL] Enviando para: " + destinatario);
+
+        Email from = new Email(emailFrom, emailFromName != null ? emailFromName : "Sistema Compras");
+        Email to = new Email(destinatario);
+
+        String subject = "Recuperação de senha";
+
+        // =========================
+        // TEXTO (anti-spam)
+        // =========================
+        Content textContent = new Content(
+                "text/plain",
+                "Olá,\n\n" +
+                        "Recebemos uma solicitação para redefinir sua senha.\n\n" +
+                        "Acesse o link abaixo:\n" +
+                        link + "\n\n" +
+                        "Ou use o token:\n" +
+                        token + "\n\n" +
+                        "Se você não solicitou, ignore este email."
+        );
+
+        // =========================
+        // HTML (melhorado)
+        // =========================
+        Content htmlContent = new Content(
+                "text/html",
+                "<html>" +
+                        "<body style='font-family: Arial; padding:20px'>" +
+                        "<p>Olá,</p>" +
+                        "<p>Recebemos uma solicitação para redefinir sua senha.</p>" +
+
+                        "<a href='" + link + "' " +
+                        "style='background:#4F46E5;color:white;padding:12px 20px;" +
+                        "text-decoration:none;border-radius:6px;display:inline-block;margin:15px 0'>" +
+                        "Redefinir senha</a>" +
+
+                        "<p>Ou utilize o token:</p>" +
+                        "<p><b>" + token + "</b></p>" +
+
+                        "<p style='color:#888;font-size:12px'>" +
+                        "Este link expira em 15 minutos.</p>" +
+
+                        "</body></html>"
+        );
+
+        Mail mail = new Mail(from, subject, to, textContent);
+        mail.addContent(htmlContent);
+
+        SendGrid sg = new SendGrid(apiKey);
+        Request request = new Request();
+
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            Response response = sg.api(request);
+
+            logger.info("[EMAIL] Status: " + response.getStatusCode());
+
+            if (response.getStatusCode() >= 400) {
+                logger.severe("[EMAIL] ERRO: " + response.getBody());
+                throw new RuntimeException("Erro ao enviar email");
             }
-        });
 
-        Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(EMAIL_REMETENTE));
-        message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destinatario));
-        message.setSubject("Recuperação de Senha");
-        message.setContent(corpo, "text/html; charset=utf-8");
-
-
-        Transport.send(message);
+        } catch (IOException ex) {
+            logger.severe("[EMAIL] Falha na requisição: " + ex.getMessage());
+            throw ex;
+        }
     }
 }

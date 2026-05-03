@@ -1,13 +1,14 @@
 package controller;
 
 import dto.ApiResponse;
-import dto.UsuarioRequest;
-import dto.UsuarioResponse;
+import dto.UserRequest;
+import dto.UserResponse;
 import exception.ApiException;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
-import model.UsuarioModel;
-import service.UsuarioService;
+import model.UserModel;
+import service.UserService;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
@@ -21,15 +22,21 @@ public class UsuarioController implements HttpHandler {
     private static final Logger logger = Logger.getLogger(UsuarioController.class.getName());
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    private final UserService userService;
+
+    // 🔥 Injeção via construtor
+    public UsuarioController(UserService userService) {
+        this.userService = userService;
+    }
+
     // GET
     private void handleGet(HttpExchange exchange) throws Exception {
         logger.info("Recebendo Requisicao GET /Usuario");
 
+        List<UserModel> users = userService.listarUsuarios();
 
-        List<UsuarioModel> users = UsuarioService.listarUsuarios();
-
-        List<UsuarioResponse> responseDtos = users.stream().map(user -> {
-            UsuarioResponse dto = new UsuarioResponse();
+        List<UserResponse> responseDtos = users.stream().map(user -> {
+            UserResponse dto = new UserResponse();
             dto.setId(user.getId());
             dto.setEmail(user.getEmail());
             dto.setFirstName(user.getFirstName());
@@ -45,21 +52,18 @@ public class UsuarioController implements HttpHandler {
                 responseDtos
         );
 
-        String json = mapper.writeValueAsString(response);
-
-        sendResponse(exchange, json, 200);
+        sendResponse(exchange, mapper.writeValueAsString(response), 200);
     }
 
     // POST
     private void handlePost(HttpExchange exchange) throws Exception {
         logger.info("Criando requisição POST /Usuario");
 
-
         String body = lerBody(exchange);
 
-        UsuarioRequest user = mapper.readValue(body, UsuarioRequest.class);
+        UserRequest user = mapper.readValue(body, UserRequest.class);
 
-        UsuarioService.criarUsuario(user);
+        userService.criarUsuario(user);
 
         ApiResponse response = new ApiResponse(
                 true,
@@ -72,15 +76,13 @@ public class UsuarioController implements HttpHandler {
 
     // PUT
     private void handlePut(HttpExchange exchange) throws Exception {
-
         logger.info("Recebendo a requisição PUT /Usuario");
 
+        int id = getIdFrompath(exchange.getRequestURI().getPath());
 
-        int id = Integer.parseInt(exchange.getRequestURI().getPath().split("/")[2]);
+        UserRequest user = mapper.readValue(lerBody(exchange), UserRequest.class);
 
-        UsuarioRequest user = mapper.readValue(lerBody(exchange), UsuarioRequest.class);
-
-        UsuarioService.atualizarUsuario(id, user);
+        userService.atualizarUsuario(id, user);
 
         ApiResponse response = new ApiResponse(
                 true,
@@ -92,14 +94,14 @@ public class UsuarioController implements HttpHandler {
     }
 
     // PATCH
-    private void handlerPatch(HttpExchange exchange) throws Exception {
-        logger.info("Recebendo requisição PARTCH /usuario");
+    private void handlePatch(HttpExchange exchange) throws Exception {
+        logger.info("Recebendo requisição PATCH /Usuario");
 
-        int id = Integer.parseInt(exchange.getRequestURI().getPath().split("/")[2]);
+        int id = getIdFrompath(exchange.getRequestURI().getPath());
 
-        UsuarioRequest user = mapper.readValue(lerBody(exchange), UsuarioRequest.class);
+        UserRequest user = mapper.readValue(lerBody(exchange), UserRequest.class);
 
-        UsuarioService.atualizarParcialmenteUsuario(id, user);
+        userService.atualizarParcialmenteUsuario(id, user);
 
         ApiResponse response = new ApiResponse(
                 true,
@@ -112,7 +114,6 @@ public class UsuarioController implements HttpHandler {
 
     // DELETE
     private void handleDelete(HttpExchange exchange) throws Exception {
-
         logger.info("Recebendo requisição DELETE /usuarios/{id}");
 
         int id = getIdFrompath(exchange.getRequestURI().getPath());
@@ -121,7 +122,7 @@ public class UsuarioController implements HttpHandler {
             throw new ApiException("ID inválido", 400);
         }
 
-        UsuarioService.excluirUsuario(id);
+        userService.excluirUsuario(id);
 
         ApiResponse response = new ApiResponse(
                 true,
@@ -137,7 +138,6 @@ public class UsuarioController implements HttpHandler {
         InputStream is = exchange.getRequestBody();
         String body = new String(is.readAllBytes());
         is.close();
-
         return body;
     }
 
@@ -157,37 +157,15 @@ public class UsuarioController implements HttpHandler {
         byte[] responseBytes = resposta.getBytes("UTF-8");
         exchange.sendResponseHeaders(status, responseBytes.length);
 
-        try(OutputStream os = exchange.getResponseBody()) {
+        try (OutputStream os = exchange.getResponseBody()) {
             os.write(responseBytes);
         }
-    }
-
-    private String getValorJson(String json, String chave) {
-
-        String busca = "\"" + chave + "\"";
-        int inicio = json.indexOf(busca);
-
-        if (inicio == -1) return "";
-
-        inicio = json.indexOf(":", inicio) + 1;
-
-        // pula espaços e aspas
-        while (json.charAt(inicio) == ' ' || json.charAt(inicio) == '\"') {
-            inicio++;
-        }
-
-        int fim = inicio;
-
-        while (json.charAt(fim) != '\"') {
-            fim++;
-        }
-
-        return json.substring(inicio, fim);
     }
 
     @Override
     public void handle(HttpExchange exchange) {
         System.out.println("PATH: " + exchange.getRequestURI().getPath());
+
         try {
             String metodo = exchange.getRequestMethod();
 
@@ -202,7 +180,7 @@ public class UsuarioController implements HttpHandler {
                     handlePut(exchange);
                     break;
                 case "PATCH":
-                    handlerPatch(exchange);
+                    handlePatch(exchange);
                     break;
                 case "DELETE":
                     handleDelete(exchange);
@@ -210,21 +188,15 @@ public class UsuarioController implements HttpHandler {
                 default:
                     sendResponse(exchange, "Metodo não suportado", 404);
             }
+
         } catch (ApiException e) {
 
             logger.warning("Erro de Negocio: " + e.getMessage());
 
-            ApiResponse response = new ApiResponse(
-                    false,
-                    e.getMessage(),
-                    null
-            );
+            ApiResponse response = new ApiResponse(false, e.getMessage(), null);
 
             try {
-                String json = mapper.writeValueAsString(response);
-                sendResponse(exchange, json, e.getStatusCode());
-                return;
-
+                sendResponse(exchange, mapper.writeValueAsString(response), e.getStatusCode());
             } catch (Exception jsonError) {
                 logger.log(Level.SEVERE, "Erro ao converter JSON", jsonError);
             }
@@ -233,16 +205,10 @@ public class UsuarioController implements HttpHandler {
 
             logger.log(Level.SEVERE, "Erro interno", e);
 
-            ApiResponse response = new ApiResponse(
-                    false,
-                    "Erro interno do servidor",
-                    null
-            );
+            ApiResponse response = new ApiResponse(false, "Erro interno do servidor", null);
 
             try {
-                String json = mapper.writeValueAsString(response);
-                sendResponse(exchange, json, 500);
-                return;
+                sendResponse(exchange, mapper.writeValueAsString(response), 500);
             } catch (Exception jsonError) {
                 logger.log(Level.SEVERE, "Erro ao converter JSON", jsonError);
             }

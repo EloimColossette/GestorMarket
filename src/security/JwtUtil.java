@@ -9,23 +9,24 @@ import java.util.Date;
 
 public class JwtUtil {
 
-    // 🔥 ideal: vir de variável de ambiente (.env)
-    private static final String SECRET = "MINHA_CHAVE_SUPER_SEGURA_123456";
+    // 🔥 ideal vir de variável de ambiente
+    private static final String SECRET = System.getenv().getOrDefault(
+            "JWT_SECRET",
+            "DEFAULT_DEV_SECRET_CHANGE_ME"
+    );
 
     private static final Algorithm ALGORITHM = Algorithm.HMAC256(SECRET);
 
-    // gerar token
     public static String generateToken(String email) {
 
         return JWT.create()
                 .withSubject(email)
                 .withIssuedAt(new Date())
                 .withIssuer("SistemaCompras")
-                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
+                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
                 .sign(ALGORITHM);
     }
 
-    // validar token (RETORNA EMAIL OU NULL)
     public static String validateToken(String token) {
 
         try {
@@ -37,7 +38,8 @@ public class JwtUtil {
             return jwt.getSubject();
 
         } catch (JWTVerificationException e) {
-            return null; // token inválido
+            // opcional: log aqui
+            return null;
         }
     }
 }

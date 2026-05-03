@@ -1,21 +1,24 @@
 package security;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
+import dto.ApiResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class AuthInterceptor extends Filter {
+
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
 
         String path = exchange.getRequestURI().getPath();
 
-        // 🔓 ROTAS LIVRES (não precisam de token)
-        if (path.equals("/login")) {
+        if (isPublicRoute(path)) {
             chain.doFilter(exchange);
             return;
         }
@@ -24,38 +27,44 @@ public class AuthInterceptor extends Filter {
             String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new JWTVerificationException("Token ausente");
+                sendError(exchange, "Token ausente ou inválido");
+                return;
             }
 
-            String token = authHeader.replace("Bearer ", "");
+            String token = authHeader.replace("Bearer ", "").trim();
 
             String user = JwtUtil.validateToken(token);
 
             if (user == null) {
-                throw new JWTVerificationException("Token inválido");
+                sendError(exchange, "Token inválido");
+                return;
             }
 
-            // 🔥 (opcional) guardar usuário na request
             exchange.setAttribute("user", user);
 
             chain.doFilter(exchange);
 
         } catch (Exception e) {
+            sendError(exchange, "Acesso negado: token inválido ou expirado");
+        }
+    }
 
-            String response = """
-                    {
-                        "success": false,
-                        "message": "Acesso negado: token inválido ou ausente"
-                    }
-                    """;
+    private boolean isPublicRoute(String path) {
+        return path.equals("/login");
+    }
 
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
+    private void sendError(HttpExchange exchange, String message) throws IOException {
 
-            exchange.sendResponseHeaders(401, response.getBytes().length);
+        ApiResponse response = new ApiResponse(false, message, null);
 
-            try (OutputStream os = exchange.getResponseBody()) {
-                os.write(response.getBytes());
-            }
+        String json = mapper.writeValueAsString(response);
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+
+        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+        exchange.sendResponseHeaders(401, bytes.length);
+
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(bytes);
         }
     }
 

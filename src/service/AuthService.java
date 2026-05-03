@@ -1,26 +1,34 @@
 package service;
 
 import exception.ApiException;
-import model.UsuarioModel;
-import repository.UsuarioRepository;
+import model.UserModel;
+import repository.UserRepository;
 import security.JwtUtil;
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 
 public class AuthService {
 
-    private static final Argon2 argon2 = Argon2Factory.create();
+    private final UserRepository userRepository;
+    private final Argon2 argon2 = Argon2Factory.create();
 
-    public static String login(String email, String password) {
+    public AuthService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public String login(String email, String password) {
 
         try {
-            UsuarioModel user = UsuarioRepository.buscarEmail(email);
+            UserModel user = userRepository.buscarEmail(email);
 
             if (user == null) {
                 throw new ApiException("Usuário não encontrado", 404);
             }
 
-            boolean valido = argon2.verify(user.getPassword(), password.toCharArray());
+            boolean valido = argon2.verify(
+                    user.getPassword(),
+                    password.toCharArray()
+            );
 
             if (!valido) {
                 throw new ApiException("Usuário ou senha inválidos", 401);

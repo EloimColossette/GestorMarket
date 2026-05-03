@@ -1,3 +1,5 @@
+package application;
+
 import config.LogConfig;
 import server.Server;
 import java.util.logging.Logger;

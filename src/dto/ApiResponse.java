@@ -1,6 +1,7 @@
 package dto;
 
 public class ApiResponse {
+
     private boolean success;
     private String message;
     private Object data;
@@ -13,11 +14,11 @@ public class ApiResponse {
         this.data = data;
     }
 
-    public boolean isSucess() {
+    public boolean isSuccess() {
         return success;
     }
 
-    public void setSucess(boolean success) {
+    public void setSuccess(boolean success) {
         this.success = success;
     }
 
