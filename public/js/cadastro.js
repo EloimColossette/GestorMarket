@@ -90,4 +90,5 @@ async function cadastrar() {
         btn.innerText = "Cadastrar";
         btn.disabled = false;
     }
+
 }

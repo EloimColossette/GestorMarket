@@ -66,7 +66,13 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     public void redefinirSenha(String token, String newPassword) throws Exception {
 
         if (!passwordResetRepository.tokenValido(token)) {
-            throw new ApiException("Token inválido ou expirado", 404);
+
+            passwordResetRepository.deletarToken(token);
+
+            throw new ApiException(
+                    "Token inválido ou expirado",
+                    404
+            );
         }
 
         UserModel user = passwordResetRepository.buscarPorToken(token);

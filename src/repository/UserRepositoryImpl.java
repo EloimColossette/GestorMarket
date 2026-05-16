@@ -13,7 +13,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public List<UserModel> listarUsuarios() {
 
-        String sql = "SELECT id_user, first_name, last_name, cpf, email, phone_number FROM users";
+        String sql = "SELECT user_id, first_name, last_name, cpf, email, phone_number FROM users";
 
         List<UserModel> users = new ArrayList<>();
 
@@ -25,7 +25,7 @@ public class UserRepositoryImpl implements UserRepository {
 
                 UserModel user = new UserModel();
 
-                user.setId(rs.getInt("id_user"));
+                user.setId(rs.getInt("user_id"));
                 user.setFirstName(rs.getString("first_name"));
                 user.setLastName(rs.getString("last_name"));
                 user.setCpf(rs.getString("cpf"));
@@ -85,7 +85,7 @@ public class UserRepositoryImpl implements UserRepository {
         String sql = """
                 UPDATE users 
                 SET email = ?, password = ?, first_name = ?, last_name = ?, cpf = ?, phone_number = ?
-                WHERE id_user = ?
+                WHERE user_id = ?
                 """;
 
         try (Connection conn = Database.conectar();
@@ -145,7 +145,7 @@ public class UserRepositoryImpl implements UserRepository {
         }
 
         sql.setLength(sql.length() - 2);
-        sql.append(" WHERE id_user = ?");
+        sql.append(" WHERE user_id = ?");
         values.add(id);
 
         try (Connection conn = Database.conectar();
@@ -166,7 +166,7 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public void deletarUsuario(int id) {
 
-        String sql = "DELETE FROM users WHERE id_user = ?";
+        String sql = "DELETE FROM users WHERE user_id = ?";
 
         try (Connection conn = Database.conectar();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -200,7 +200,7 @@ public class UserRepositoryImpl implements UserRepository {
 
             if (resultSet.next()) {
                 UserModel user = new UserModel();
-                user.setId(resultSet.getInt("id_user"));
+                user.setId(resultSet.getInt("user_id"));
                 user.setEmail(resultSet.getString("email"));
                 user.setFirstName(resultSet.getString("first_name"));
                 user.setLastName(resultSet.getString("last_name"));
