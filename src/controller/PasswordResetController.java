@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dto.ApiResponse;
 import exception.ApiException;
+import server.StaticFileHandler;
 import service.PasswordResetService;
 
 import java.io.InputStream;
@@ -15,7 +16,6 @@ import java.nio.charset.StandardCharsets;
 public class PasswordResetController implements HttpHandler {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-
     private final PasswordResetService passwordResetService;
 
     public PasswordResetController(PasswordResetService passwordResetService) {
@@ -25,15 +25,19 @@ public class PasswordResetController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) {
         try {
-
             String method = exchange.getRequestMethod();
-            String path = exchange.getRequestURI().getPath();
+            String path   = exchange.getRequestURI().getPath();
 
             System.out.println("REQUEST: " + method + " " + path);
 
-            // CORS preflight
             if (method.equalsIgnoreCase("OPTIONS")) {
                 sendEmpty(exchange, 204);
+                return;
+            }
+
+            // GET redireciona pro StaticFileHandler (ex: /password/reset-password.html)
+            if (method.equalsIgnoreCase("GET")) {
+                new StaticFileHandler("public").handle(exchange);
                 return;
             }
 
@@ -44,19 +48,15 @@ public class PasswordResetController implements HttpHandler {
                 return;
             }
 
-            // remove /password do path (boa prática)
             String endpoint = path.replace("/password", "");
 
             switch (endpoint) {
-
                 case "/forgot-password":
                     handleForgotPassword(exchange);
                     break;
-
                 case "/reset-password":
                     handleResetPassword(exchange);
                     break;
-
                 default:
                     sendJson(exchange,
                             new ApiResponse(false, "Rota não encontrada", path),
@@ -67,7 +67,6 @@ public class PasswordResetController implements HttpHandler {
             sendJson(exchange,
                     new ApiResponse(false, e.getMessage(), null),
                     e.getStatusCode());
-
         } catch (Exception e) {
             e.printStackTrace();
             sendJson(exchange,
@@ -76,13 +75,8 @@ public class PasswordResetController implements HttpHandler {
         }
     }
 
-    // =========================
-    // FORGOT PASSWORD
-    // =========================
     private void handleForgotPassword(HttpExchange exchange) throws Exception {
-
-        String body = readBody(exchange);
-
+        String body   = readBody(exchange);
         JsonNode json = objectMapper.readTree(body);
 
         if (!json.has("email")) {
@@ -90,7 +84,6 @@ public class PasswordResetController implements HttpHandler {
         }
 
         String email = json.get("email").asText();
-
         passwordResetService.solicitarResetSenha(email);
 
         sendJson(exchange,
@@ -98,20 +91,15 @@ public class PasswordResetController implements HttpHandler {
                 200);
     }
 
-    // =========================
-    // RESET PASSWORD
-    // =========================
     private void handleResetPassword(HttpExchange exchange) throws Exception {
-
-        String body = readBody(exchange);
-
+        String body   = readBody(exchange);
         JsonNode json = objectMapper.readTree(body);
 
         if (!json.has("token") || !json.has("newPassword")) {
             throw new ApiException("Token e nova senha são obrigatórios", 400);
         }
 
-        String token = json.get("token").asText();
+        String token       = json.get("token").asText();
         String newPassword = json.get("newPassword").asText();
 
         passwordResetService.redefinirSenha(token, newPassword);
@@ -121,9 +109,6 @@ public class PasswordResetController implements HttpHandler {
                 200);
     }
 
-    // =========================
-    // UTIL
-    // =========================
     private String readBody(HttpExchange exchange) throws Exception {
         try (InputStream is = exchange.getRequestBody()) {
             return new String(is.readAllBytes(), StandardCharsets.UTF_8);
@@ -132,19 +117,13 @@ public class PasswordResetController implements HttpHandler {
 
     private void sendJson(HttpExchange exchange, ApiResponse response, int status) {
         try {
-
-            String json = objectMapper.writeValueAsString(response);
+            String json  = objectMapper.writeValueAsString(response);
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-
-            exchange.getResponseHeaders()
-                    .set("Content-Type", "application/json; charset=UTF-8");
-
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
             exchange.sendResponseHeaders(status, bytes.length);
-
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(bytes);
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }

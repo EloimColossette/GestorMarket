@@ -29,7 +29,7 @@ async function login() {
             msg.className = "sucesso";
 
             setTimeout(() => {
-                window.location.href = "dashboard.html";
+                window.location.href = "home.html";
             }, 1500);
 
         } else {

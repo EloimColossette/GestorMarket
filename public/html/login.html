@@ -1,100 +1,37 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <title>
-        Login - Sistema Compras
-    </title>
-
-    <link
-            rel="stylesheet"
-            href="../css/style.css"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema Compras</title>
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-
 <body>
-
 <div class="background"></div>
-
 <div class="login-container">
-
     <div class="card">
+        <img src="../assets/Logo.png" alt="Logo Sistema Compras" class="logo">
+        <h1>Bem-vindo!</h1>
+        <p>Realize o login para continuar</p>
 
-        <img
-                src="../assets/Logo.png"
-                alt="Logo Sistema Compras"
-                class="logo"
-        >
-
-        <p>
-            Realize o login para continuar
-        </p>
-
-        <input
-                type="email"
-                id="email"
-                placeholder="Email"
-        >
+        <input type="email" id="email" placeholder="Email">
 
         <div class="password-container">
-
-            <input
-                    type="password"
-                    id="password"
-                    placeholder="Senha"
-            >
-
-            <span
-                    id="toggleLoginPassword"
-                    class="toggle-password"
-
-                    onclick="
-                        togglePassword(
-                            'password',
-                            'toggleLoginPassword'
-                        )
-                    "
-            >
-                👁️
-            </span>
-
+            <input type="password" id="password" placeholder="Senha">
+            <span id="toggleLoginPassword" class="toggle-password"
+                  onclick="togglePassword('password', 'toggleLoginPassword')">👁️</span>
         </div>
 
-        <button
-                onclick="login()"
-                id="btnLogin"
-        >
-            Entrar
-        </button>
+        <button onclick="login()" id="btnLogin">Entrar</button>
 
-        <a
-                href="#"
-                class="forgot"
-                onclick="forgotPassword()"
-        >
-            Esqueci minha senha
-        </a>
+        <a href="#" class="forgot" onclick="forgotPassword()">Esqueci minha senha</a>
 
-        <a
-                href="cadastro.html"
-                class="forgot"
-        >
-            Não tem conta? Cadastre-se
-        </a>
+        <p class="card-footer">Não tem conta? <a href="cadastro.html">Cadastre-se</a></p>
 
         <p id="mensagem"></p>
-
     </div>
-
 </div>
-
 <script src="../js/utils.js"></script>
-
 <script src="../js/login.js"></script>
-
 </body>
 </html>

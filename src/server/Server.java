@@ -52,14 +52,14 @@ public class Server {
             // =========================
             server.createContext("/usuarios", usuarioController)
                     .getFilters().add(new CorsFilter());
-
             server.createContext("/password", passwordResetController)
                     .getFilters().add(new CorsFilter());
-
             server.createContext("/login", authController)
                     .getFilters().add(new CorsFilter());
 
-            server.createContext("/", new StaticFileHandler("public"));
+            // "/" por último e com o mais longo match possível
+            server.createContext("/", new StaticFileHandler("public"))
+                    .getFilters().add(new CorsFilter());
 
             server.setExecutor(null);
             server.start();

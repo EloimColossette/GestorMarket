@@ -1,0 +1,268 @@
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Sora', sans-serif;
+}
+
+:root {
+    --card-bg:     rgba(255,255,255,0.2);
+    --card-border: rgba(255,255,255,0.35);
+    --text:        #fff;
+    --text-dim:    rgba(255,255,255,0.7);
+    --shadow:      rgba(0,0,0,0.15);
+}
+
+body {
+    min-height: 100vh;
+    color: var(--text);
+    overflow-x: hidden;
+}
+
+/* ── BACKGROUND ── */
+.bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(135deg, #ff7a18, #2ecc71);
+}
+
+/* ── TOPBAR ── */
+.topbar {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: rgba(0,0,0,0.15);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.home-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.home-link svg {
+    width: 18px;
+    height: 18px;
+    stroke: #fff;
+}
+
+/* sublinhado ativo */
+.home-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 32px;
+    width: 60px;
+    height: 2px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 2px;
+}
+
+.config-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: color .2s;
+}
+
+.config-link:hover { color: #fff; }
+
+.config-link svg {
+    width: 18px;
+    height: 18px;
+    stroke: rgba(255,255,255,0.8);
+    transition: stroke .2s;
+}
+
+.config-link:hover svg { stroke: #fff; }
+
+/* ── MAIN ── */
+.main {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 57px);
+    padding: 48px 20px;
+}
+
+/* ── GREETING ── */
+.greeting {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeUp .6s ease both;
+}
+
+.greeting h1 {
+    font-size: clamp(24px, 5vw, 36px);
+    font-weight: 700;
+    letter-spacing: -.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.greeting p {
+    margin-top: 8px;
+    font-size: 15px;
+    color: var(--text-dim);
+    font-weight: 300;
+}
+
+/* ── GRID ── */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 210px);
+    gap: 20px;
+    width: 100%;
+    justify-content: center;
+}
+
+/* ── CARD ── */
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 28px 22px 22px;
+    cursor: pointer;
+    backdrop-filter: blur(16px);
+    transition: transform .3s ease, background .3s ease, box-shadow .3s ease;
+    animation: fadeUp .6s ease both;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px var(--shadow);
+}
+
+.card:nth-child(1) { animation-delay: .1s; }
+.card:nth-child(2) { animation-delay: .2s; }
+.card:nth-child(3) { animation-delay: .3s; }
+
+.card:hover {
+    transform: translateY(-6px);
+    background: rgba(255,255,255,0.3);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* ── ÍCONE ── */
+.card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+    background: rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.card-icon svg {
+    width: 24px;
+    height: 24px;
+    stroke: #fff;
+}
+
+/* remove cores antigas, todos ficam brancos */
+.icon-green, .icon-blue, .icon-purple {
+    background: rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.icon-green svg, .icon-blue svg, .icon-purple svg {
+    stroke: #fff;
+}
+
+/* ── TEXTO ── */
+.card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.3;
+}
+
+.card p {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 300;
+    line-height: 1.6;
+    flex: 1;
+}
+
+/* ── SETA ── */
+.card-arrow {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 6px;
+    transition: background .2s, border-color .2s;
+}
+
+.card-arrow svg {
+    width: 14px;
+    height: 14px;
+    stroke: #fff;
+}
+
+.card:hover .card-arrow {
+    background: rgba(255,255,255,0.35);
+    border-color: rgba(255,255,255,0.8);
+}
+
+/* ── ANIMAÇÃO ── */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVO ── */
+@media (max-width: 720px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 440px;
+    }
+
+    .topbar {
+        padding: 14px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: 1fr;
+        max-width: 320px;
+    }
+
+    .main {
+        padding: 36px 16px;
+    }
+
+    .greeting {
+        margin-bottom: 32px;
+    }
+
+    .greeting h1 {
+        font-size: 26px;
+    }
+}

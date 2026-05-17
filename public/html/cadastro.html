@@ -1,148 +1,52 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <title>
-        Cadastro - Sistema Compras
-    </title>
-
-    <link
-            rel="stylesheet"
-            href="../css/style.css"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Sistema Compras</title>
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-
 <body>
-
 <div class="background"></div>
-
 <div class="login-container">
-
     <div class="card">
+        <img src="../assets/Logo.png" alt="Logo Sistema Compras" class="logo">
+        <h1>Criar conta</h1>
+        <p>Preencha os dados para se cadastrar</p>
 
-        <img
-                src="../assets/Logo.png"
-                alt="Logo Sistema Compras"
-                class="logo"
-        >
+        <div class="input-row">
+            <input type="text" id="firstName" placeholder="Nome">
+            <input type="text" id="lastName" placeholder="Sobrenome">
+        </div>
 
-        <p>
-            Crie sua conta para continuar
-        </p>
-
-        <input
-                type="text"
-                id="firstName"
-                placeholder="Nome"
-        >
-
-        <input
-                type="text"
-                id="lastName"
-                placeholder="Sobrenome"
-        >
-
-        <input
-                type="text"
-                id="cpf"
-                placeholder="CPF"
-        >
-
-        <input
-                type="text"
-                id="phoneNumber"
-                placeholder="Telefone"
-        >
-
-        <input
-                type="email"
-                id="email"
-                placeholder="Email"
-        >
+        <input type="text" id="cpf" placeholder="CPF">
+        <input type="text" id="phoneNumber" placeholder="Telefone">
+        <input type="email" id="email" placeholder="Email">
 
         <div class="password-container">
-
-            <input
-                    type="password"
-                    id="password"
-                    placeholder="Senha"
-            >
-
-            <span
-                    id="toggleRegisterPassword"
-                    class="toggle-password"
-
-                    onclick="
-                        togglePassword(
-                            'password',
-                            'toggleRegisterPassword'
-                        )
-                    "
-            >
-                👁️
-            </span>
-
+            <input type="password" id="password" placeholder="Senha">
+            <span id="toggleRegisterPassword" class="toggle-password"
+                  onclick="togglePassword('password', 'toggleRegisterPassword')">👁️</span>
         </div>
 
         <div class="password-container">
-
-            <input
-                    type="password"
-                    id="confirmPassword"
-                    placeholder="Confirmar senha"
-            >
-
-            <span
-                    id="toggleConfirmPassword"
-                    class="toggle-password"
-
-                    onclick="
-                        togglePassword(
-                            'confirmPassword',
-                            'toggleConfirmPassword'
-                        )
-                    "
-            >
-                👁️
-            </span>
-
+            <input type="password" id="confirmPassword" placeholder="Confirmar senha">
+            <span id="toggleConfirmPassword" class="toggle-password"
+                  onclick="togglePassword('confirmPassword', 'toggleConfirmPassword')">👁️</span>
         </div>
 
-        <button
-                onclick="cadastrar()"
-                id="btnCadastrar"
-        >
-            Cadastrar
-        </button>
+        <button onclick="cadastrar()" id="btnCadastrar">Cadastrar</button>
 
-        <a
-                href="/html/login.html"
-                class="forgot"
-        >
-            ← Voltar para o login
-        </a>
+        <p class="card-footer">Já tem conta? <a href="login.html">Entrar</a></p>
 
         <p id="mensagem"></p>
-
     </div>
-
 </div>
-
 <script src="../js/utils.js"></script>
-
 <script src="../js/cadastro.js"></script>
-
 <script>
-
     aplicarMascaraCPF("cpf");
-
     aplicarMascaraTelefone("phoneNumber");
-
 </script>
-
 </body>
 </html>
