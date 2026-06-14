@@ -1,10 +1,8 @@
-package model;
+package dto;
 
 import java.math.BigDecimal;
 
-public class PurchaseItemModel {
-
-    private Integer purchaseItemsId;
+public class CreatePurchaseItemDTO {
 
     private Integer purchaseId;
 
@@ -20,24 +18,19 @@ public class PurchaseItemModel {
 
     private String promotionDescription;
 
-    private BigDecimal subtotal;
-
-    public PurchaseItemModel() {
+    public CreatePurchaseItemDTO() {
     }
 
-    public PurchaseItemModel(
-            Integer purchaseItemsId,
+    public CreatePurchaseItemDTO(
             Integer purchaseId,
             String productName,
             Integer quantity,
             BigDecimal unitPrice,
             Boolean promotionActive,
             String promotionType,
-            String promotionDescription,
-            BigDecimal subtotal
+            String promotionDescription
     ) {
 
-        this.purchaseItemsId = purchaseItemsId;
         this.purchaseId = purchaseId;
         this.productName = productName;
         this.quantity = quantity;
@@ -45,15 +38,6 @@ public class PurchaseItemModel {
         this.promotionActive = promotionActive;
         this.promotionType = promotionType;
         this.promotionDescription = promotionDescription;
-        this.subtotal = subtotal;
-    }
-
-    public Integer getPurchaseItemsId() {
-        return purchaseItemsId;
-    }
-
-    public void setPurchaseItemsId(Integer purchaseItemsId) {
-        this.purchaseItemsId = purchaseItemsId;
     }
 
     public Integer getPurchaseId() {
@@ -110,13 +94,5 @@ public class PurchaseItemModel {
 
     public void setPromotionDescription(String promotionDescription) {
         this.promotionDescription = promotionDescription;
-    }
-
-    public BigDecimal getSubtotal() {
-        return subtotal;
-    }
-
-    public void setSubtotal(BigDecimal subtotal) {
-        this.subtotal = subtotal;
     }
 }

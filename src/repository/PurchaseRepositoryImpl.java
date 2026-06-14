@@ -64,6 +64,102 @@ public class PurchaseRepositoryImpl implements PurchaseRepository {
     }
 
     @Override
+    public void update(
+            PurchaseModel purchaseModel
+    ) {
+
+        String sql = """
+            UPDATE purchases
+            SET purchase_date = ?,
+                total = ?
+            WHERE purchases_id = ?
+            """;
+
+        try (
+
+                Connection conn =
+                        Database.conectar();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql)
+
+        ) {
+
+            stmt.setDate(
+                    1,
+                    Date.valueOf(
+                            purchaseModel.getPurchaseDate()
+                    )
+            );
+
+            stmt.setBigDecimal(
+                    2,
+                    purchaseModel.getTotal()
+            );
+
+            stmt.setInt(
+                    3,
+                    purchaseModel.getPurchasesId()
+            );
+
+            stmt.executeUpdate();
+
+            logger.info(
+                    "Purchase updated successfully!"
+            );
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error updating purchase",
+                    e
+            );
+        }
+    }
+
+    @Override
+    public void delete(
+            Integer purchasesId
+    ) {
+
+        String sql = """
+            DELETE FROM purchases
+            WHERE purchases_id = ?
+            """;
+
+        try (
+
+                Connection conn =
+                        Database.conectar();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql)
+
+        ) {
+
+            stmt.setInt(
+                    1,
+                    purchasesId
+            );
+
+            stmt.executeUpdate();
+
+            logger.info(
+                    "Purchase deleted successfully!"
+            );
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error deleting purchase",
+                    e
+            );
+        }
+    }
+
+    @Override
     public List<PurchaseModel> findAll() {
 
         List<PurchaseModel> purchaseModels =
@@ -124,5 +220,72 @@ public class PurchaseRepositoryImpl implements PurchaseRepository {
         }
 
         return purchaseModels;
+    }
+
+    @Override
+    public PurchaseModel findById(
+            Integer purchasesId
+    ) {
+
+        String sql = """
+            SELECT *
+            FROM purchases
+            WHERE purchases_id = ?
+            """;
+
+        try (
+
+                Connection conn =
+                        Database.conectar();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql)
+
+        ) {
+
+            stmt.setInt(
+                    1,
+                    purchasesId
+            );
+
+            ResultSet resultSet =
+                    stmt.executeQuery();
+
+            if (resultSet.next()) {
+
+                PurchaseModel purchaseModel =
+                        new PurchaseModel();
+
+                purchaseModel.setPurchasesId(
+                        resultSet.getInt(
+                                "purchases_id"
+                        )
+                );
+
+                purchaseModel.setPurchaseDate(
+                        resultSet.getDate(
+                                "purchase_date"
+                        ).toLocalDate()
+                );
+
+                purchaseModel.setTotal(
+                        resultSet.getBigDecimal(
+                                "total"
+                        )
+                );
+
+                return purchaseModel;
+            }
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error finding purchase",
+                    e
+            );
+        }
+
+        return null;
     }
 }

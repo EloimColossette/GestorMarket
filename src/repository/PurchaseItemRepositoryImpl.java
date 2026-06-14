@@ -19,18 +19,18 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
     @Override
     public void save(PurchaseItemModel purchaseItemModel) {
         String sql = """
-                INSERT INTO purchase_items (
-                    purchase_id,
-                    product_id,
-                    quantity,
-                    unit_price,
-                    promotion_active,
-                    promotion_type,
-                    promotion_description,
-                    subtotal
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """;
+            INSERT INTO purchase_items (
+                purchase_id,
+                product_name,
+                quantity,
+                unit_price,
+                promotion_active,
+                promotion_type,
+                promotion_description,
+                subtotal
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """;
         try (
 
                 Connection conn =
@@ -46,9 +46,9 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
                     purchaseItemModel.getPurchaseId()
             );
 
-            stmt.setInt(
+            stmt.setString(
                     2,
-                    purchaseItemModel.getProductId()
+                    purchaseItemModel.getProductName()
             );
 
             stmt.setInt(
@@ -99,6 +99,136 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
     }
 
     @Override
+    public void update(
+            PurchaseItemModel purchaseItemModel
+    ) {
+
+        String sql = """
+            UPDATE purchase_items
+            SET purchase_id = ?,
+                product_name = ?,
+                quantity = ?,
+                unit_price = ?,
+                promotion_active = ?,
+                promotion_type = ?,
+                promotion_description = ?,
+                subtotal = ?
+            WHERE purchase_items_id = ?
+        """;
+
+        try (
+
+                Connection conn =
+                        Database.conectar();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql)
+
+        ) {
+
+            stmt.setInt(
+                    1,
+                    purchaseItemModel.getPurchaseId()
+            );
+
+            stmt.setString(
+                    2,
+                    purchaseItemModel.getProductName()
+            );
+
+            stmt.setInt(
+                    3,
+                    purchaseItemModel.getQuantity()
+            );
+
+            stmt.setBigDecimal(
+                    4,
+                    purchaseItemModel.getUnitPrice()
+            );
+
+            stmt.setBoolean(
+                    5,
+                    purchaseItemModel.getPromotionActive()
+            );
+
+            stmt.setString(
+                    6,
+                    purchaseItemModel.getPromotionType()
+            );
+
+            stmt.setString(
+                    7,
+                    purchaseItemModel.getPromotionDescription()
+            );
+
+            stmt.setBigDecimal(
+                    8,
+                    purchaseItemModel.getSubtotal()
+            );
+
+            stmt.setInt(
+                    9,
+                    purchaseItemModel.getPurchaseItemsId()
+            );
+
+            stmt.executeUpdate();
+
+            logger.info(
+                    "Purchase item updated successfully!"
+            );
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error updating purchase item",
+                    e
+            );
+        }
+    }
+
+    @Override
+    public void delete(
+            Integer purchaseItemsId
+    ) {
+
+        String sql = """
+            DELETE FROM purchase_items
+            WHERE purchase_items_id = ?
+            """;
+
+        try (
+
+                Connection conn =
+                        Database.conectar();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql)
+
+        ) {
+
+            stmt.setInt(
+                    1,
+                    purchaseItemsId
+            );
+
+            stmt.executeUpdate();
+
+            logger.info(
+                    "Purchase item deleted successfully!"
+            );
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error deleting purchase item",
+                    e
+            );
+        }
+    }
+
+    @Override
     public List<PurchaseItemModel> findAll() {
 
         List<PurchaseItemModel> purchaseItems =
@@ -138,9 +268,9 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
                         )
                 );
 
-                purchaseItem.setProductId(
-                        resultSet.getInt(
-                                "product_id"
+                purchaseItem.setProductName(
+                        resultSet.getString(
+                                "product_name"
                         )
                 );
 
@@ -195,5 +325,108 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
         }
 
         return purchaseItems;
+    }
+
+    @Override
+    public PurchaseItemModel findById(
+            Integer purchaseItemsId
+    ) {
+
+        String sql = """
+            SELECT *
+            FROM purchase_items
+            WHERE purchase_items_id = ?
+            """;
+
+        try (
+
+                Connection conn =
+                        Database.conectar();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql)
+
+        ) {
+
+            stmt.setInt(
+                    1,
+                    purchaseItemsId
+            );
+
+            ResultSet resultSet =
+                    stmt.executeQuery();
+
+            if (resultSet.next()) {
+
+                PurchaseItemModel purchaseItem =
+                        new PurchaseItemModel();
+
+                purchaseItem.setPurchaseItemsId(
+                        resultSet.getInt(
+                                "purchase_items_id"
+                        )
+                );
+
+                purchaseItem.setPurchaseId(
+                        resultSet.getInt(
+                                "purchase_id"
+                        )
+                );
+
+                purchaseItem.setProductName(
+                        resultSet.getString(
+                                "product_name"
+                        )
+                );
+
+                purchaseItem.setQuantity(
+                        resultSet.getInt(
+                                "quantity"
+                        )
+                );
+
+                purchaseItem.setUnitPrice(
+                        resultSet.getBigDecimal(
+                                "unit_price"
+                        )
+                );
+
+                purchaseItem.setPromotionActive(
+                        resultSet.getBoolean(
+                                "promotion_active"
+                        )
+                );
+
+                purchaseItem.setPromotionType(
+                        resultSet.getString(
+                                "promotion_type"
+                        )
+                );
+
+                purchaseItem.setPromotionDescription(
+                        resultSet.getString(
+                                "promotion_description"
+                        )
+                );
+
+                purchaseItem.setSubtotal(
+                        resultSet.getBigDecimal(
+                                "subtotal"
+                        )
+                );
+
+                return purchaseItem;
+            }
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error finding purchase item",
+                    e
+            );
+        }
+
+        return null;
     }
 }

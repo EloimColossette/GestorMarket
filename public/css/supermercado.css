@@ -1,0 +1,76 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #0f172a; /* mesma base da home */
+}
+
+.app-background {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* IGUAL AO LOGIN (exatamente igual) */
+  background: linear-gradient(135deg, #ff7a18, #2ecc71);
+}
+
+.window {
+  width: 800px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.window-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.window-header h1 {
+  font-size: 26px;
+}
+
+.window-header p {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.menu-card {
+  padding: 20px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  color: white;
+  transition: 0.2s ease;
+}
+
+.menu-card:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.03);
+}
+
+.window-footer {
+  margin-top: 20px;
+  text-align: center;
+  opacity: 0.5;
+  font-size: 12px;
+}

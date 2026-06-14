@@ -1,9 +1,7 @@
 package server;
 
 import com.sun.net.httpserver.HttpServer;
-import controller.AuthController;
-import controller.UsuarioController;
-import controller.PasswordResetController;
+import controller.*;
 
 import repository.*;
 import service.*;
@@ -30,6 +28,8 @@ public class Server {
             // =========================
             UserRepository userRepository = new UserRepositoryImpl();
             PasswordResetRepository passwordResetRepository = new PasswordResetRepositoryImpl();
+            PurchaseRepository purchaseRepository = new PurchaseRepositoryImpl();
+            PurchaseItemRepository purchaseItemRepository = new PurchaseItemRepositoryImpl();
 
             // =========================
             // SERVICES
@@ -38,6 +38,9 @@ public class Server {
             AuthService authService = new AuthService(userRepository);
             PasswordResetService passwordResetService =
                     new PasswordResetServiceImpl(userRepository, passwordResetRepository);
+            PurchaseService purchaseService = new PurchaseServiceImpl(purchaseRepository);
+            PurchaseItemService purchaseItemService = new PurchaseItemServiceImpl(purchaseItemRepository);
+
 
             // =========================
             // CONTROLLERS
@@ -46,6 +49,8 @@ public class Server {
             AuthController authController = new AuthController(authService);
             PasswordResetController passwordResetController =
                     new PasswordResetController(passwordResetService);
+            PurchaseController purchaseController = new PurchaseController(purchaseService);
+            PurchaseItemController purchaseItemController = new PurchaseItemController(purchaseItemService);
 
             // =========================
             // ROUTES
@@ -55,6 +60,11 @@ public class Server {
             server.createContext("/password", passwordResetController)
                     .getFilters().add(new CorsFilter());
             server.createContext("/login", authController)
+                    .getFilters().add(new CorsFilter());
+            server.createContext("/purchases", purchaseController)
+                    .getFilters().add(new CorsFilter());
+
+            server.createContext("/purchase-items", purchaseItemController)
                     .getFilters().add(new CorsFilter());
 
             // "/" por último e com o mais longo match possível
