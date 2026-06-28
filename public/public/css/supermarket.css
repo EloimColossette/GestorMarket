@@ -1,0 +1,13 @@
+/* ==============================================
+   supermarket.css  —  Supermarket module styles
+   Background, navbar, window, buttons and forms
+   all come from global.css
+=============================================== */
+
+/* ── CHART ───────────────────────────────── */
+.chart-container {
+    margin-top: 20px;
+    background: rgba(255,255,255,0.08);
+    padding: 12px;
+    border-radius: 14px;
+}

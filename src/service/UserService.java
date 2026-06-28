@@ -6,13 +6,13 @@ import java.util.List;
 
 public interface UserService {
 
-    List<UserModel> listarUsuarios() throws Exception;
+    List<UserModel> findAllUsers() throws Exception;
 
-    void criarUsuario(UserRequest usuario) throws Exception;
+    void createUser(UserRequest user) throws Exception;
 
-    void atualizarUsuario(int id, UserRequest usuario) throws Exception;
+    void updateUser(int id, UserRequest user) throws Exception;
 
-    void atualizarParcialmenteUsuario(int id, UserRequest usuario) throws Exception;
+    void partialUpdateUser(int id, UserRequest user) throws Exception;
 
-    void excluirUsuario(int id) throws Exception;
+    void deleteUser(int id) throws Exception;
 }

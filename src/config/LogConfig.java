@@ -4,17 +4,17 @@ import java.util.logging.*;
 
 public class LogConfig {
 
-    public static void config() {
+    // Renamed from config() to configure()
+    public static void configure() {
 
         Logger rootLogger = Logger.getLogger("");
 
-        // remove handlers padrão
+        // Remove default handlers
         for (Handler h : rootLogger.getHandlers()) {
             rootLogger.removeHandler(h);
         }
 
         ConsoleHandler handler = new ConsoleHandler();
-
         handler.setLevel(Level.INFO);
 
         handler.setFormatter(new Formatter() {
@@ -24,11 +24,11 @@ public class LogConfig {
                 String color;
 
                 if (record.getLevel() == Level.SEVERE) {
-                    color = "\u001B[31m"; // vermelho
+                    color = "\u001B[31m"; // red
                 } else if (record.getLevel() == Level.WARNING) {
-                    color = "\u001B[33m"; // amarelo
+                    color = "\u001B[33m"; // yellow
                 } else {
-                    color = "\u001B[32m"; // verde
+                    color = "\u001B[32m"; // green
                 }
 
                 return color +

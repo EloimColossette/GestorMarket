@@ -7,6 +7,8 @@ public class PurchaseModel {
 
     private Integer purchasesId;
 
+    private Integer supermarketId;
+
     private LocalDate purchaseDate;
 
     private BigDecimal total;
@@ -18,11 +20,13 @@ public class PurchaseModel {
     // Full constructor
     public PurchaseModel(
             Integer purchasesId,
+            Integer supermarketId,
             LocalDate purchaseDate,
             BigDecimal total
     ) {
 
         this.purchasesId = purchasesId;
+        this.supermarketId = supermarketId;
         this.purchaseDate = purchaseDate;
         this.total = total;
     }
@@ -35,6 +39,16 @@ public class PurchaseModel {
             Integer purchasesId
     ) {
         this.purchasesId = purchasesId;
+    }
+
+    public Integer getSupermarketId() {
+        return supermarketId;
+    }
+
+    public void setSupermarketId(
+            Integer supermarketId
+    ) {
+        this.supermarketId = supermarketId;
     }
 
     public LocalDate getPurchaseDate() {
@@ -62,6 +76,7 @@ public class PurchaseModel {
 
         return "PurchaseModel{" +
                 "purchasesId=" + purchasesId +
+                ", supermarketId=" + supermarketId +
                 ", purchaseDate=" + purchaseDate +
                 ", total=" + total +
                 '}';

@@ -17,7 +17,7 @@
 /* ── BODY ── */
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Sora', sans-serif;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -116,7 +116,7 @@ input {
     border: 1.5px solid var(--border);
     outline: none;
     font-size: 14px;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Sora', sans-serif;
     color: var(--text);
     background: #fafafa;
     transition: border-color .2s, box-shadow .2s, background .2s;
@@ -173,7 +173,7 @@ button {
     cursor: pointer;
     font-size: 15px;
     font-weight: 700;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Sora', sans-serif;
     letter-spacing: .3px;
     transition: opacity .2s, transform .2s, box-shadow .2s;
     box-shadow: 0 4px 16px rgba(255,122,24,0.3);

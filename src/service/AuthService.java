@@ -19,19 +19,18 @@ public class AuthService {
     public String login(String email, String password) {
 
         try {
-            UserModel user = userRepository.buscarEmail(email);
+            UserModel user = userRepository.findByEmail(email);
 
+            // SECURITY: same message whether the email doesn't exist or the password is wrong.
+            // Returning "user not found" for unknown emails would let attackers enumerate valid accounts.
             if (user == null) {
-                throw new ApiException("Usuário não encontrado", 404);
+                throw new ApiException("Invalid email or password", 401);
             }
 
-            boolean valido = argon2.verify(
-                    user.getPassword(),
-                    password.toCharArray()
-            );
+            boolean valid = argon2.verify(user.getPassword(), password.toCharArray());
 
-            if (!valido) {
-                throw new ApiException("Usuário ou senha inválidos", 401);
+            if (!valid) {
+                throw new ApiException("Invalid email or password", 401);
             }
 
             return JwtUtil.generateToken(user.getEmail());
@@ -39,7 +38,7 @@ public class AuthService {
         } catch (ApiException e) {
             throw e;
         } catch (Exception e) {
-            throw new ApiException("Erro interno", 500);
+            throw new ApiException("Internal error", 500);
         }
     }
 }

@@ -21,71 +21,58 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final EmailService emailService;
     private final Argon2 argon2 = Argon2Factory.create();
 
-    public PasswordResetServiceImpl(
-            UserRepository userRepository,
-            PasswordResetRepository passwordResetRepository
-    ) {
+    public PasswordResetServiceImpl(UserRepository userRepository,
+                                    PasswordResetRepository passwordResetRepository) {
         this.userRepository = userRepository;
         this.passwordResetRepository = passwordResetRepository;
         this.emailService = new EmailService();
     }
 
-    // =========================
-    // SOLICITAR RESET
-    // =========================
     @Override
-    public void solicitarResetSenha(String email) throws Exception {
+    public void requestPasswordReset(String email) throws Exception {
 
-        passwordResetRepository.deletarExpirados();
+        passwordResetRepository.deleteExpiredTokens();
 
-        UserModel user = userRepository.buscarEmail(email);
+        UserModel user = userRepository.findByEmail(email);
 
         if (user == null) {
-            throw new ApiException("Email não encontrado", 404);
+            throw new ApiException("Email not found", 404);
         }
 
-        passwordResetRepository.deletarPorUsuario(user.getId());
+        passwordResetRepository.deleteTokensByUser(user.getId());
 
         String token = UUID.randomUUID().toString();
 
         Timestamp expiration = new Timestamp(
-                System.currentTimeMillis() + (1000 * 60 * 10)
+                System.currentTimeMillis() + (1000 * 60 * 10) // 10 minutes
         );
 
-        passwordResetRepository.salvarToken(user.getId(), token, expiration);
+        passwordResetRepository.saveToken(user.getId(), token, expiration);
 
         emailService.enviarEmailRecuperacao(email, token);
 
-        logger.info("Token enviado para: " + email);
+        logger.info("Reset token sent to: " + email);
     }
 
-    // =========================
-    // REDEFINIR SENHA
-    // =========================
     @Override
-    public void redefinirSenha(String token, String newPassword) throws Exception {
+    public void resetPassword(String token, String newPassword) throws Exception {
 
-        if (!passwordResetRepository.tokenValido(token)) {
-
-            passwordResetRepository.deletarToken(token);
-
-            throw new ApiException(
-                    "Token inválido ou expirado",
-                    404
-            );
+        if (!passwordResetRepository.isTokenValid(token)) {
+            passwordResetRepository.deleteToken(token);
+            throw new ApiException("Invalid or expired token", 404);
         }
 
-        UserModel user = passwordResetRepository.buscarPorToken(token);
+        UserModel user = passwordResetRepository.findByToken(token);
 
         if (user == null) {
-            throw new ApiException("Token inválido", 404);
+            throw new ApiException("Invalid token", 404);
         }
 
-        validarSenha(newPassword);
+        validatePassword(newPassword);
 
         String passwordHash = argon2.hash(3, 65536, 1, newPassword.toCharArray());
 
-        userRepository.atualizarUsuario(
+        userRepository.updateUser(
                 user.getId(),
                 user.getEmail(),
                 passwordHash,
@@ -95,30 +82,15 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 user.getPhoneNumber()
         );
 
-        passwordResetRepository.deletarToken(token);
+        passwordResetRepository.deleteToken(token);
 
-        logger.info("Senha redefinida: usuário " + user.getId());
+        logger.info("Password reset for user " + user.getId());
     }
 
-    // =========================
-    // VALIDAÇÃO
-    // =========================
-    private void validarSenha(String password) {
-
-        if (password == null || password.isEmpty()) {
-            throw new ApiException("Senha obrigatória", 400);
-        }
-
-        if (password.length() < 6) {
-            throw new ApiException("Senha deve ter no mínimo 6 caracteres", 400);
-        }
-
-        if (!password.matches(".*[0-9].*")) {
-            throw new ApiException("Senha deve conter número", 400);
-        }
-
-        if (!password.matches(".*[!@#$%^&*()_+=-].*")) {
-            throw new ApiException("Senha deve conter caractere especial", 400);
-        }
+    private void validatePassword(String password) {
+        if (password == null || password.isEmpty())         throw new ApiException("Password is required", 400);
+        if (password.length() < 6)                         throw new ApiException("Password must be at least 6 characters", 400);
+        if (!password.matches(".*[0-9].*"))                throw new ApiException("Password must contain a number", 400);
+        if (!password.matches(".*[!@#$%^&*()_+=-].*"))    throw new ApiException("Password must contain a special character", 400);
     }
 }

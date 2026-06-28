@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro - Sistema Compras</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 <div class="background"></div>
 <div class="login-container">
     <div class="card">
-        <img src="../assets/Logo.png" alt="Logo Sistema Compras" class="logo">
+        <img src="../assets/logo.png" alt="Logo Sistema Compras" class="logo">
         <h1>Criar conta</h1>
         <p>Preencha os dados para se cadastrar</p>
 
@@ -35,7 +37,7 @@
                   onclick="togglePassword('confirmPassword', 'toggleConfirmPassword')">👁️</span>
         </div>
 
-        <button onclick="cadastrar()" id="btnCadastrar">Cadastrar</button>
+        <button onclick="register()" id="btnRegister">Cadastrar</button>
 
         <p class="card-footer">Já tem conta? <a href="login.html">Entrar</a></p>
 
@@ -43,10 +45,10 @@
     </div>
 </div>
 <script src="../js/utils.js"></script>
-<script src="../js/cadastro.js"></script>
+<script src="../js/register.js"></script>
 <script>
-    aplicarMascaraCPF("cpf");
-    aplicarMascaraTelefone("phoneNumber");
+    applyCpfMask("cpf");
+    applyPhoneMask("phoneNumber");
 </script>
 </body>
 </html>

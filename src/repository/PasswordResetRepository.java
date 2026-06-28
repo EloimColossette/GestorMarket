@@ -5,15 +5,15 @@ import java.sql.Timestamp;
 
 public interface PasswordResetRepository {
 
-    void salvarToken(int userId, String token, Timestamp expiration) throws Exception;
+    void saveToken(int userId, String token, Timestamp expiration) throws Exception;
 
-    UserModel buscarPorToken(String token) throws Exception;
+    UserModel findByToken(String token) throws Exception;
 
-    boolean tokenValido(String token) throws Exception;
+    boolean isTokenValid(String token) throws Exception;
 
-    void deletarToken(String token) throws Exception;
+    void deleteToken(String token) throws Exception;
 
-    void deletarExpirados() throws Exception;
+    void deleteExpiredTokens() throws Exception;
 
-    void deletarPorUsuario(int userId) throws Exception;
+    void deleteTokensByUser(int userId) throws Exception;
 }

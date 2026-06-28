@@ -5,23 +5,23 @@ import server.Server;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-
 public class Main {
+
     private static final Logger logger = Logger.getLogger(Main.class.getName());
 
-    public static void main(String[] args){
-        try{
-            LogConfig.config();
-            
-            logger.info("Iniciando Servidor...");
+    public static void main(String[] args) {
+        try {
+            // configure() must be called before Server.start()
+            // so that EnvLoader (and JwtUtil's static block) has already loaded the .env
+            LogConfig.configure();
+
+            logger.info("Starting server...");
 
             Server.start();
 
-        }catch (Exception e){
-            logger.severe("Erro ao iniciar o servidor!");
-            logger.log(Level.SEVERE, "Detalhes do erro: ", e);
+        } catch (Exception e) {
+            logger.severe("Failed to start server!");
+            logger.log(Level.SEVERE, "Error details: ", e);
         }
-        
     }
-    
 }

@@ -84,7 +84,7 @@ public class PasswordResetController implements HttpHandler {
         }
 
         String email = json.get("email").asText();
-        passwordResetService.solicitarResetSenha(email);
+        passwordResetService.requestPasswordReset(email);
 
         sendJson(exchange,
                 new ApiResponse(true, "Link de recuperação enviado", null),
@@ -102,7 +102,7 @@ public class PasswordResetController implements HttpHandler {
         String token       = json.get("token").asText();
         String newPassword = json.get("newPassword").asText();
 
-        passwordResetService.redefinirSenha(token, newPassword);
+        passwordResetService.resetPassword(token, newPassword);
 
         sendJson(exchange,
                 new ApiResponse(true, "Senha redefinida com sucesso", null),

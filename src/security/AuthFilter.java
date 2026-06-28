@@ -10,13 +10,13 @@ public class AuthFilter extends Filter {
 
     @Override
     public String description() {
-        return "Filtro de autenticação JWT";
+        return "JWT Authentication Filter";
     }
 
     @Override
     public void doFilter(HttpExchange exchange, Chain chain) throws IOException {
 
-        String path = exchange.getRequestURI().getPath();
+        String path   = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
 
         if (isPublicRoute(path, method)) {
@@ -27,7 +27,7 @@ public class AuthFilter extends Filter {
         String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendResponse(exchange, "Token ausente ou inválido", 401);
+            sendResponse(exchange, "Missing or invalid token", 401);
             return;
         }
 
@@ -37,7 +37,7 @@ public class AuthFilter extends Filter {
             String email = JwtUtil.validateToken(token);
 
             if (email == null) {
-                sendResponse(exchange, "Token inválido", 401);
+                sendResponse(exchange, "Invalid token", 401);
                 return;
             }
 
@@ -45,20 +45,21 @@ public class AuthFilter extends Filter {
 
         } catch (Exception e) {
             e.printStackTrace();
-            sendResponse(exchange, "Token inválido", 401);
+            sendResponse(exchange, "Invalid token", 401);
         }
     }
 
     private boolean isPublicRoute(String path, String method) {
+        // /login is public for everyone
+        // POST /users is public so anyone can register
         return path.equals("/login")
-                || (path.equals("/usuarios") && method.equals("POST"));
+                || (path.equals("/users") && method.equals("POST"))
+                || path.startsWith("/password"); // forgot-password and reset-password
     }
 
     private void sendResponse(HttpExchange exchange, String message, int status) throws IOException {
         byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
-
         exchange.sendResponseHeaders(status, bytes.length);
-
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
         }

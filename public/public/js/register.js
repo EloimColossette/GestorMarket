@@ -1,4 +1,9 @@
-async function cadastrar() {
+/**
+ * register.js
+ * Handles new user registration.
+ */
+
+async function register() {
     const firstName      = document.getElementById("firstName").value.trim();
     const lastName       = document.getElementById("lastName").value.trim();
     const cpf            = document.getElementById("cpf").value.trim();
@@ -6,76 +11,67 @@ async function cadastrar() {
     const email          = document.getElementById("email").value.trim();
     const password       = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
-    const btn = document.getElementById("btnCadastrar");
-    const msg = document.getElementById("mensagem");
+    const btn            = document.getElementById("btnRegister");
+    const msg            = document.getElementById("mensagem");
 
     msg.innerText = "";
     msg.className = "";
 
-    // Validações no front
+    // ── VALIDATION ───────────────────────────────────────
     if (!firstName || !lastName) {
-        msg.innerText = "Nome e sobrenome são obrigatórios";
+        msg.innerText = "First name and last name are required";
         msg.className = "erro";
         return;
     }
 
     if (!cpf) {
-        msg.innerText = "CPF é obrigatório";
+        msg.innerText = "CPF is required";
         msg.className = "erro";
         return;
     }
 
     if (!phoneNumber) {
-        msg.innerText = "Telefone é obrigatório";
+        msg.innerText = "Phone number is required";
         msg.className = "erro";
         return;
     }
 
     if (!email) {
-        msg.innerText = "Email é obrigatório";
+        msg.innerText = "Email is required";
         msg.className = "erro";
         return;
     }
 
     if (!password) {
-        msg.innerText = "Senha é obrigatória";
+        msg.innerText = "Password is required";
         msg.className = "erro";
         return;
     }
 
     if (password !== confirmPassword) {
-        msg.innerText = "As senhas não coincidem";
+        msg.innerText = "Passwords do not match";
         msg.className = "erro";
         return;
     }
 
-    btn.innerText = "Cadastrando...";
-    btn.disabled = true;
+    btn.innerText = "Registering...";
+    btn.disabled  = true;
 
     try {
-        const response = await fetch("http://localhost:8080/usuarios", {
+        const response = await fetch("http://localhost:8080/users", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                firstName,
-                lastName,
-                cpf,
-                phoneNumber,
-                email,
-                password
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ firstName, lastName, cpf, phoneNumber, email, password })
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            msg.innerText = "Cadastro realizado com sucesso!";
+            msg.innerText = "Registration successful!";
             msg.className = "sucesso";
 
             setTimeout(() => {
-                window.location.href = "/html/login.html";
+                window.location.href = "login.html";
             }, 2000);
 
         } else {
@@ -84,11 +80,11 @@ async function cadastrar() {
         }
 
     } catch (error) {
-        msg.innerText = "Erro ao conectar com o servidor";
+        msg.innerText = "Error connecting to server";
         msg.className = "erro";
-    } finally {
-        btn.innerText = "Cadastrar";
-        btn.disabled = false;
-    }
 
+    } finally {
+        btn.innerText = "Register";
+        btn.disabled  = false;
+    }
 }

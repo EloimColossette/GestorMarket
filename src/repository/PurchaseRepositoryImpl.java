@@ -1,13 +1,16 @@
 package repository;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import database.Database;
 import model.PurchaseModel;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-public class PurchaseRepositoryImpl implements PurchaseRepository {
+public class PurchaseRepositoryImpl
+        implements PurchaseRepository {
 
     private static final Logger logger =
             Logger.getLogger(
@@ -15,35 +18,43 @@ public class PurchaseRepositoryImpl implements PurchaseRepository {
             );
 
     @Override
-    public void save(PurchaseModel purchaseModel) {
+    public void save(
+            PurchaseModel purchaseModel
+    ) {
 
         String sql = """
-                INSERT INTO purchases (
-                    purchase_date,
-                    total
-                )
-                VALUES (?, ?)
-                """;
+            INSERT INTO purchases (
+                supermarket_id,
+                purchase_date,
+                total
+            )
+            VALUES (?, ?, ?)
+            """;
 
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql)
 
         ) {
 
-            stmt.setDate(
+            stmt.setInt(
                     1,
+                    purchaseModel.getSupermarketId()
+            );
+
+            stmt.setDate(
+                    2,
                     Date.valueOf(
                             purchaseModel.getPurchaseDate()
                     )
             );
 
             stmt.setBigDecimal(
-                    2,
+                    3,
                     purchaseModel.getTotal()
             );
 
@@ -64,13 +75,157 @@ public class PurchaseRepositoryImpl implements PurchaseRepository {
     }
 
     @Override
+    public List<PurchaseModel> findAll() {
+
+        List<PurchaseModel> purchases =
+                new ArrayList<>();
+
+        String sql = """
+            SELECT *
+            FROM purchases
+            """;
+
+        try (
+
+                Connection conn =
+                        Database.connect();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql);
+
+                ResultSet resultSet =
+                        stmt.executeQuery()
+
+        ) {
+
+            while (resultSet.next()) {
+
+                PurchaseModel purchase =
+                        new PurchaseModel();
+
+                purchase.setPurchasesId(
+                        resultSet.getInt(
+                                "purchases_id"
+                        )
+                );
+
+                purchase.setSupermarketId(
+                        resultSet.getInt(
+                                "supermarket_id"
+                        )
+                );
+
+                purchase.setPurchaseDate(
+                        resultSet.getDate(
+                                "purchase_date"
+                        ).toLocalDate()
+                );
+
+                purchase.setTotal(
+                        resultSet.getBigDecimal(
+                                "total"
+                        )
+                );
+
+                purchases.add(
+                        purchase
+                );
+            }
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error loading purchases",
+                    e
+            );
+        }
+
+        return purchases;
+    }
+
+    @Override
+    public PurchaseModel findById(
+            Integer purchasesId
+    ) {
+
+        String sql = """
+            SELECT *
+            FROM purchases
+            WHERE purchases_id = ?
+            """;
+
+        try (
+
+                Connection conn =
+                        Database.connect();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql)
+
+        ) {
+
+            stmt.setInt(
+                    1,
+                    purchasesId
+            );
+
+            ResultSet resultSet =
+                    stmt.executeQuery();
+
+            if (resultSet.next()) {
+
+                PurchaseModel purchase =
+                        new PurchaseModel();
+
+                purchase.setPurchasesId(
+                        resultSet.getInt(
+                                "purchases_id"
+                        )
+                );
+
+                purchase.setSupermarketId(
+                        resultSet.getInt(
+                                "supermarket_id"
+                        )
+                );
+
+                purchase.setPurchaseDate(
+                        resultSet.getDate(
+                                "purchase_date"
+                        ).toLocalDate()
+                );
+
+                purchase.setTotal(
+                        resultSet.getBigDecimal(
+                                "total"
+                        )
+                );
+
+                return purchase;
+            }
+
+        } catch (SQLException e) {
+
+            logger.log(
+                    Level.SEVERE,
+                    "Error finding purchase",
+                    e
+            );
+        }
+
+        return null;
+    }
+
+    @Override
     public void update(
             PurchaseModel purchaseModel
     ) {
 
         String sql = """
             UPDATE purchases
-            SET purchase_date = ?,
+            SET supermarket_id = ?,
+                purchase_date = ?,
                 total = ?
             WHERE purchases_id = ?
             """;
@@ -78,27 +233,32 @@ public class PurchaseRepositoryImpl implements PurchaseRepository {
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql)
 
         ) {
 
-            stmt.setDate(
+            stmt.setInt(
                     1,
+                    purchaseModel.getSupermarketId()
+            );
+
+            stmt.setDate(
+                    2,
                     Date.valueOf(
                             purchaseModel.getPurchaseDate()
                     )
             );
 
             stmt.setBigDecimal(
-                    2,
+                    3,
                     purchaseModel.getTotal()
             );
 
             stmt.setInt(
-                    3,
+                    4,
                     purchaseModel.getPurchasesId()
             );
 
@@ -131,7 +291,7 @@ public class PurchaseRepositoryImpl implements PurchaseRepository {
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql)
@@ -157,135 +317,5 @@ public class PurchaseRepositoryImpl implements PurchaseRepository {
                     e
             );
         }
-    }
-
-    @Override
-    public List<PurchaseModel> findAll() {
-
-        List<PurchaseModel> purchaseModels =
-                new ArrayList<>();
-
-        String sql = """
-                SELECT * FROM purchases
-                """;
-
-        try (
-
-                Connection conn =
-                        Database.conectar();
-
-                PreparedStatement stmt =
-                        conn.prepareStatement(sql);
-
-                ResultSet resultSet =
-                        stmt.executeQuery()
-
-        ) {
-
-            while (resultSet.next()) {
-
-                PurchaseModel purchaseModel =
-                        new PurchaseModel();
-
-                purchaseModel.setPurchasesId(
-                        resultSet.getInt(
-                                "purchases_id"
-                        )
-                );
-
-                purchaseModel.setPurchaseDate(
-                        resultSet.getDate(
-                                "purchase_date"
-                        ).toLocalDate()
-                );
-
-                purchaseModel.setTotal(
-                        resultSet.getBigDecimal(
-                                "total"
-                        )
-                );
-
-                purchaseModels.add(
-                        purchaseModel
-                );
-            }
-
-        } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Error loading purchases",
-                    e
-            );
-        }
-
-        return purchaseModels;
-    }
-
-    @Override
-    public PurchaseModel findById(
-            Integer purchasesId
-    ) {
-
-        String sql = """
-            SELECT *
-            FROM purchases
-            WHERE purchases_id = ?
-            """;
-
-        try (
-
-                Connection conn =
-                        Database.conectar();
-
-                PreparedStatement stmt =
-                        conn.prepareStatement(sql)
-
-        ) {
-
-            stmt.setInt(
-                    1,
-                    purchasesId
-            );
-
-            ResultSet resultSet =
-                    stmt.executeQuery();
-
-            if (resultSet.next()) {
-
-                PurchaseModel purchaseModel =
-                        new PurchaseModel();
-
-                purchaseModel.setPurchasesId(
-                        resultSet.getInt(
-                                "purchases_id"
-                        )
-                );
-
-                purchaseModel.setPurchaseDate(
-                        resultSet.getDate(
-                                "purchase_date"
-                        ).toLocalDate()
-                );
-
-                purchaseModel.setTotal(
-                        resultSet.getBigDecimal(
-                                "total"
-                        )
-                );
-
-                return purchaseModel;
-            }
-
-        } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Error finding purchase",
-                    e
-            );
-        }
-
-        return null;
     }
 }

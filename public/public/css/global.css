@@ -1,0 +1,273 @@
+/* ==============================================
+   global.css
+   Shared background, navbar and base styles
+   used by ALL pages (auth + app).
+=============================================== */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Sora', sans-serif;
+}
+
+/* ── BACKGROUND (same on every screen) ────── */
+body {
+    min-height: 100vh;
+    color: #fff;
+    overflow-x: hidden;
+    background: linear-gradient(135deg, #ff7a18, #2ecc71);
+}
+
+/* ── TOPBAR / NAVBAR ─────────────────────── */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: rgba(0,0,0,0.15);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.home-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: none;
+}
+
+.home-link svg {
+    width: 18px;
+    height: 18px;
+    stroke: #fff;
+}
+
+.config-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: color .2s;
+}
+
+.config-link:hover { color: #fff; }
+
+.config-link svg {
+    width: 18px;
+    height: 18px;
+    stroke: rgba(255,255,255,0.8);
+    transition: stroke .2s;
+}
+
+.config-link:hover svg { stroke: #fff; }
+
+/* ── PAGE WRAPPER ────────────────────────── */
+.page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 57px);
+    padding: 40px 20px;
+}
+
+/* ── GLASS WINDOW (supermercado style) ────── */
+.window {
+    width: 100%;
+    max-width: 850px;
+    background: rgba(255,255,255,0.10);
+    backdrop-filter: blur(14px);
+    border-radius: 20px;
+    padding: 30px;
+    color: #fff;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.15);
+    animation: fadeUp 0.35s ease both;
+}
+
+.window-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.window-header h1 { font-size: 28px; margin-bottom: 6px; }
+.window-header p  { font-size: 14px; opacity: 0.75; }
+
+.window-footer {
+    margin-top: 20px;
+    text-align: center;
+    opacity: 0.5;
+    font-size: 12px;
+}
+
+/* ── FORM ELEMENTS ───────────────────────── */
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-container input,
+.search-container input {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    outline: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-size: 15px;
+    font-family: 'Sora', sans-serif;
+    transition: background .2s, box-shadow .2s;
+}
+
+.form-container input::placeholder,
+.search-container input::placeholder {
+    color: rgba(255,255,255,0.55);
+}
+
+.form-container input:focus,
+.search-container input:focus {
+    background: rgba(255,255,255,0.18);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
+}
+
+/* ── BUTTONS ─────────────────────────────── */
+.primary-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Sora', sans-serif;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+    border: 1px solid rgba(255,255,255,0.35);
+}
+
+.primary-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-2px);
+}
+
+.secondary-btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font-size: 14px;
+    font-family: 'Sora', sans-serif;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+}
+
+.secondary-btn:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-1px);
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.menu-card {
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Sora', sans-serif;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    text-align: left;
+    transition: background .2s, transform .2s;
+}
+
+.menu-card:hover {
+    background: rgba(255,255,255,0.16);
+    transform: translateY(-2px) scale(1.01);
+}
+
+/* ── LIST ────────────────────────────────── */
+.search-container { margin-top: 16px; }
+
+.list-container {
+    margin-top: 16px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.list-container::-webkit-scrollbar { width: 6px; }
+.list-container::-webkit-scrollbar-track { background: transparent; }
+.list-container::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+}
+
+.glass-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    transition: background .2s, transform .2s;
+}
+
+.glass-card:hover {
+    background: rgba(255,255,255,0.14);
+    transform: translateY(-2px);
+}
+
+.card-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.market-icon { font-size: 22px; }
+
+.card-id {
+    opacity: 0.6;
+    font-size: 13px;
+}
+
+/* ── ANIMATION ───────────────────────────── */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 768px) {
+    .topbar { padding: 14px 20px; }
+    .window { padding: 20px; }
+    .window-header h1 { font-size: 22px; }
+}

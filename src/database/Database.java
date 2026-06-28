@@ -6,22 +6,19 @@ import envloader.EnvLoader;
 
 public class Database {
 
-    private static final String URL = EnvLoader.get("DB_URL");
-    private static final String DB_USER = EnvLoader.get("DB_USER");
+    private static final String URL      = EnvLoader.get("DB_URL");
+    private static final String DB_USER  = EnvLoader.get("DB_USER");
     private static final String PASSWORD = EnvLoader.get("DB_PASSWORD");
 
-    public static Connection conectar() {
+    // Renamed from conectar() to connect()
+    public static Connection connect() {
         try {
             Class.forName("org.postgresql.Driver");
-
             Connection conn = DriverManager.getConnection(URL, DB_USER, PASSWORD);
-
-            System.out.println("Conectado ao banco de dados!");
-
+            System.out.println("Connected to database!");
             return conn;
-
         } catch (Exception e) {
-            System.out.println("Erro ao conectar no banco: " + e.getMessage());
+            System.out.println("Error connecting to database: " + e.getMessage());
             return null;
         }
     }

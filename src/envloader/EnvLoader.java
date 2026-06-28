@@ -11,61 +11,61 @@ public class EnvLoader {
     private static final Map<String, String> env = new HashMap<>();
 
     static {
-        // Tenta encontrar o .env subindo os diretórios a partir do user.dir
-        File envFile = encontrarEnv();
+        // Search for .env file walking up from working directory
+        File envFile = findEnvFile();
 
         if (envFile == null) {
             throw new RuntimeException(
-                    "Arquivo .env não encontrado! Diretório atual: " +
+                    ".env file not found! Working directory: " +
                             System.getProperty("user.dir")
             );
         }
 
-        System.out.println("[EnvLoader] Carregando .env de: " + envFile.getAbsolutePath());
+        System.out.println("[EnvLoader] Loading .env from: " + envFile.getAbsolutePath());
 
         try (BufferedReader br = new BufferedReader(new FileReader(envFile))) {
 
-            String linha;
+            String line;
 
-            while ((linha = br.readLine()) != null) {
+            while ((line = br.readLine()) != null) {
 
-                linha = linha.trim();
+                line = line.trim();
 
-                if (linha.isEmpty() || linha.startsWith("#")) continue;
+                if (line.isEmpty() || line.startsWith("#")) continue;
 
-                String[] partes = linha.split("=", 2);
+                String[] parts = line.split("=", 2);
 
-                if (partes.length == 2) {
-                    String chave = partes[0].trim();
-                    String valor = partes[1].trim();
-                    env.put(chave, valor);
-                    System.out.println("[EnvLoader] Carregado: " + chave + " = " + mascararValor(chave, valor));
+                if (parts.length == 2) {
+                    String key   = parts[0].trim();
+                    String value = parts[1].trim();
+                    env.put(key, value);
+                    System.out.println("[EnvLoader] Loaded: " + key + " = " + maskValue(key, value));
                 }
             }
 
         } catch (Exception e) {
-            throw new RuntimeException("Erro ao carregar .env: " + e.getMessage(), e);
+            throw new RuntimeException("Error loading .env: " + e.getMessage(), e);
         }
     }
 
-    public static String get(String chave) {
-        String valor = env.get(chave);
+    public static String get(String key) {
+        String value = env.get(key);
 
-        if (valor == null) {
-            System.err.println("[EnvLoader] AVISO: chave não encontrada no .env -> " + chave);
+        if (value == null) {
+            System.err.println("[EnvLoader] WARNING: key not found in .env -> " + key);
         }
 
-        return valor;
+        return value;
     }
 
-    // Sobe até 3 diretórios procurando o .env
-    private static File encontrarEnv() {
+    // Walks up to 4 directory levels looking for .env
+    private static File findEnvFile() {
         File dir = new File(System.getProperty("user.dir"));
 
         for (int i = 0; i < 4; i++) {
-            File candidato = new File(dir, ".env");
-            if (candidato.exists()) {
-                return candidato;
+            File candidate = new File(dir, ".env");
+            if (candidate.exists()) {
+                return candidate;
             }
             dir = dir.getParentFile();
             if (dir == null) break;
@@ -74,14 +74,14 @@ public class EnvLoader {
         return null;
     }
 
-    // Mascara valores sensíveis no log
-    private static String mascararValor(String chave, String valor) {
-        String chaveLower = chave.toLowerCase();
-        if (chaveLower.contains("password") ||
-                chaveLower.contains("secret") ||
-                chaveLower.contains("api_key")) {
+    // Masks sensitive values in logs
+    private static String maskValue(String key, String value) {
+        String lowerKey = key.toLowerCase();
+        if (lowerKey.contains("password") ||
+                lowerKey.contains("secret") ||
+                lowerKey.contains("api_key")) {
             return "****";
         }
-        return valor;
+        return value;
     }
 }

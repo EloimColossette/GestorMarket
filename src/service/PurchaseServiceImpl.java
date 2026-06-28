@@ -25,8 +25,22 @@ public class PurchaseServiceImpl
             CreatePurchaseDTO createPurchaseDTO
     ) {
 
+        if (
+                createPurchaseDTO.getSupermarketId()
+                        == null
+        ) {
+
+            throw new IllegalArgumentException(
+                    "Supermarket is required"
+            );
+        }
+
         PurchaseModel purchaseModel =
                 new PurchaseModel();
+
+        purchaseModel.setSupermarketId(
+                createPurchaseDTO.getSupermarketId()
+        );
 
         purchaseModel.setPurchaseDate(
                 createPurchaseDTO.getPurchaseDate() == null
@@ -44,30 +58,19 @@ public class PurchaseServiceImpl
     }
 
     @Override
-    public void updatePurchase(
-            Integer purchasesId,
-            CreatePurchaseDTO createPurchaseDTO
-    ) {
+    public void updatePurchase(Integer purchasesId, CreatePurchaseDTO createPurchaseDTO) {
 
         PurchaseModel purchaseModel =
-                purchaseRepository.findById(
-                        purchasesId
-                );
+                purchaseRepository.findById(purchasesId);
 
         if (purchaseModel == null) {
-
-            throw new IllegalArgumentException(
-                    "Purchase not found"
-            );
+            throw new IllegalArgumentException("Purchase not found");
         }
 
-        purchaseModel.setPurchaseDate(
-                createPurchaseDTO.getPurchaseDate()
-        );
+        purchaseModel.setSupermarketId(createPurchaseDTO.getSupermarketId());
+        purchaseModel.setPurchaseDate(createPurchaseDTO.getPurchaseDate());
 
-        purchaseRepository.update(
-                purchaseModel
-        );
+        purchaseRepository.update(purchaseModel);
     }
 
     @Override
@@ -93,7 +96,8 @@ public class PurchaseServiceImpl
     }
 
     @Override
-    public List<PurchaseModel> findAllPurchases() {
+    public List<PurchaseModel>
+    findAllPurchases() {
 
         return purchaseRepository.findAll();
     }

@@ -34,7 +34,7 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql)
@@ -119,7 +119,7 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql)
@@ -200,7 +200,7 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql)
@@ -241,7 +241,7 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql);
@@ -341,7 +341,7 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
         try (
 
                 Connection conn =
-                        Database.conectar();
+                        Database.connect();
 
                 PreparedStatement stmt =
                         conn.prepareStatement(sql)
