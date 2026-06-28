@@ -6,7 +6,6 @@
 // ── SIGN IN ─────────────────────────────────────────────
 async function login(event) {
 
-    event.preventDefault();
 
     const email    = document.getElementById("email").value;
     const password = document.getElementById("password").value;
@@ -64,6 +63,16 @@ async function login(event) {
 
     }
 }
+
+// ADICIONADO
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("email").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") login();
+    });
+    document.getElementById("password").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") login();
+    });
+});
 
 // ── REDIRECT TO FORGOT PASSWORD ─────────────────────────
 function forgotPassword() {

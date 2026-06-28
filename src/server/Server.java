@@ -83,7 +83,7 @@ public class Server {
             ctxPurchaseItems.getFilters().add(new AuthFilter());
 
             // Static files — must be last (most generic path)
-            server.createContext("/", new StaticFileHandler("public/public"))
+            server.createContext("/", new StaticFileHandler("public"))
                     .getFilters().add(new CorsFilter());
 
             server.setExecutor(null);
