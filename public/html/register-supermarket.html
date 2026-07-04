@@ -15,20 +15,19 @@
 <script src="../js/layout.js"></script>
 
 <div class="page">
-    <div class="window">
+    <button id="backBtn" class="secondary-btn back-btn-outside" onclick="goBack()">← Voltar</button>
 
+    <div class="window">
         <!-- TELA CADASTRO -->
         <div id="registerScreen">
             <div class="window-header">
                 <h1>Supermercados</h1>
                 <p>Cadastro de supermercados</p>
             </div>
-
             <div class="form-container">
                 <input id="name" type="text" placeholder="Nome do supermercado" />
                 <button class="primary-btn" onclick="saveSupermarket()">Salvar Supermercado</button>
                 <button class="secondary-btn" onclick="showListScreen()">📋 Ver Lista</button>
-                <button class="secondary-btn" onclick="goBack()">← Voltar</button>
             </div>
         </div>
 
@@ -38,16 +37,11 @@
                 <h1>Lista de Supermercados</h1>
                 <p>Pesquisa e gerenciamento</p>
             </div>
-
-            <button class="secondary-btn" onclick="showRegisterScreen()">← Voltar</button>
-
             <div class="search-container">
                 <input type="text" id="searchInput" placeholder="Pesquisar supermercado..." onkeyup="filterSupermarkets()" />
             </div>
-
             <div id="supermarketList" class="list-container"></div>
-        </div>
-
+        </div>termina
     </div>
 </div>
 

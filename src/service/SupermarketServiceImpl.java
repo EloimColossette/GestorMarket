@@ -36,7 +36,7 @@ public class SupermarketServiceImpl
                 createSupermarketDTO.getName()
         );
 
-        supermarketRepository.save(
+        supermarketRepository.saveSupermarket(
                 supermarket
         );
     }
@@ -45,7 +45,7 @@ public class SupermarketServiceImpl
     public List<SupermarketModel>
     findAllSupermarkets() {
 
-        return supermarketRepository.findAll();
+        return supermarketRepository.findAllSupermarkets();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class SupermarketServiceImpl
             Integer supermarketsId
     ) {
 
-        return supermarketRepository.findById(
+        return supermarketRepository.findSupermarketById(
                 supermarketsId
         );
     }
@@ -65,7 +65,7 @@ public class SupermarketServiceImpl
     ) {
 
         SupermarketModel supermarket =
-                supermarketRepository.findById(
+                supermarketRepository.findSupermarketById(
                         supermarketsId
                 );
 
@@ -84,7 +84,7 @@ public class SupermarketServiceImpl
                 createSupermarketDTO.getName()
         );
 
-        supermarketRepository.update(
+        supermarketRepository.updateSupermarket(
                 supermarket
         );
     }
@@ -95,7 +95,7 @@ public class SupermarketServiceImpl
     ) {
 
         SupermarketModel supermarket =
-                supermarketRepository.findById(
+                supermarketRepository.findSupermarketById(
                         supermarketsId
                 );
 
@@ -106,7 +106,7 @@ public class SupermarketServiceImpl
             );
         }
 
-        supermarketRepository.delete(
+        supermarketRepository.deleteSupermarket(
                 supermarketsId
         );
     }

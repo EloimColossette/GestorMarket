@@ -113,16 +113,49 @@ public class SupermarketController implements HttpHandler {
     // PUT (ainda simples, igual seu padrão atual)
     private void updateSupermarket(HttpExchange exchange) throws IOException {
 
-        String response = "Update supermarket endpoint not implemented yet";
+        try {
 
-        exchange.sendResponseHeaders(
-                501,
-                response.getBytes(StandardCharsets.UTF_8).length
-        );
+            String path = exchange.getRequestURI().getPath();
 
-        exchange.getResponseBody().write(
-                response.getBytes(StandardCharsets.UTF_8)
-        );
+            // /supermarkets/1
+            String[] parts = path.split("/");
+
+            Integer id = Integer.parseInt(parts[2]);
+
+            String body = new String(
+                    exchange.getRequestBody().readAllBytes(),
+                    StandardCharsets.UTF_8
+            );
+
+            CreateSupermarketDTO dto =
+                    JsonUtil.getGson().fromJson(body, CreateSupermarketDTO.class);
+
+            supermarketService.updateSupermarket(id, dto);
+
+            String response = "Supermarket updated successfully";
+
+            exchange.sendResponseHeaders(
+                    200,
+                    response.getBytes(StandardCharsets.UTF_8).length
+            );
+
+            exchange.getResponseBody().write(
+                    response.getBytes(StandardCharsets.UTF_8)
+            );
+
+        } catch (Exception e) {
+
+            String response = e.getMessage();
+
+            exchange.sendResponseHeaders(
+                    400,
+                    response.getBytes(StandardCharsets.UTF_8).length
+            );
+
+            exchange.getResponseBody().write(
+                    response.getBytes(StandardCharsets.UTF_8)
+            );
+        }
 
         exchange.close();
     }
@@ -130,16 +163,41 @@ public class SupermarketController implements HttpHandler {
     // DELETE
     private void deleteSupermarket(HttpExchange exchange) throws IOException {
 
-        String response = "Delete supermarket endpoint not implemented yet";
+        try {
 
-        exchange.sendResponseHeaders(
-                501,
-                response.getBytes(StandardCharsets.UTF_8).length
-        );
+            String path = exchange.getRequestURI().getPath();
 
-        exchange.getResponseBody().write(
-                response.getBytes(StandardCharsets.UTF_8)
-        );
+            // /supermarkets/1
+            String[] parts = path.split("/");
+
+            Integer id = Integer.parseInt(parts[2]);
+
+            supermarketService.deleteSupermarket(id);
+
+            String response = "Supermarket deleted successfully";
+
+            exchange.sendResponseHeaders(
+                    200,
+                    response.getBytes(StandardCharsets.UTF_8).length
+            );
+
+            exchange.getResponseBody().write(
+                    response.getBytes(StandardCharsets.UTF_8)
+            );
+
+        } catch (Exception e) {
+
+            String response = e.getMessage();
+
+            exchange.sendResponseHeaders(
+                    400,
+                    response.getBytes(StandardCharsets.UTF_8).length
+            );
+
+            exchange.getResponseBody().write(
+                    response.getBytes(StandardCharsets.UTF_8)
+            );
+        }
 
         exchange.close();
     }

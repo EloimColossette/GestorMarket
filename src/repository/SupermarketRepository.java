@@ -6,21 +6,21 @@ import java.util.List;
 
 public interface SupermarketRepository {
 
-    void save(
+    void saveSupermarket(
             SupermarketModel supermarketModel
     );
 
-    List<SupermarketModel> findAll();
+    List<SupermarketModel> findAllSupermarkets();
 
-    SupermarketModel findById(
+    SupermarketModel findSupermarketById(
             Integer supermarketsId
     );
 
-    void update(
+    void updateSupermarket(
             SupermarketModel supermarketModel
     );
 
-    void delete(
+    void deleteSupermarket(
             Integer supermarketsId
     );
 }

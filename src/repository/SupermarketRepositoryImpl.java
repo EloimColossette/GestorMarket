@@ -3,9 +3,14 @@ package repository;
 import database.Database;
 import model.SupermarketModel;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,8 +22,11 @@ public class SupermarketRepositoryImpl
                     SupermarketRepositoryImpl.class.getName()
             );
 
+    // =========================================
+    // SAVE
+    // =========================================
     @Override
-    public void save(
+    public void saveSupermarket(
             SupermarketModel supermarketModel
     ) {
 
@@ -60,8 +68,11 @@ public class SupermarketRepositoryImpl
         }
     }
 
+    // =========================================
+    // FIND ALL
+    // =========================================
     @Override
-    public List<SupermarketModel> findAll() {
+    public List<SupermarketModel> findAllSupermarkets() {
 
         List<SupermarketModel> supermarkets =
                 new ArrayList<>();
@@ -118,8 +129,11 @@ public class SupermarketRepositoryImpl
         return supermarkets;
     }
 
+    // =========================================
+    // FIND BY ID
+    // =========================================
     @Override
-    public SupermarketModel findById(
+    public SupermarketModel findSupermarketById(
             Integer supermarketsId
     ) {
 
@@ -179,8 +193,11 @@ public class SupermarketRepositoryImpl
         return null;
     }
 
+    // =========================================
+    // UPDATE
+    // =========================================
     @Override
-    public void update(
+    public void updateSupermarket(
             SupermarketModel supermarketModel
     ) {
 
@@ -226,8 +243,11 @@ public class SupermarketRepositoryImpl
         }
     }
 
+    // =========================================
+    // DELETE
+    // =========================================
     @Override
-    public void delete(
+    public void deleteSupermarket(
             Integer supermarketsId
     ) {
 
