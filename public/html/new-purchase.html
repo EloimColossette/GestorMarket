@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Compra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/supermarket.css">
+    <link rel="stylesheet" href="../css/new-purchase.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<script src="../js/layout.js"></script>
+
+<div class="page">
+    <button id="backBtn" class="secondary-btn back-btn-outside" onclick="goBack()">← Voltar</button>
+
+    <div class="window">
+
+        <div class="window-header">
+            <h1>Nova Compra</h1>
+            <p>Registre uma nova compra</p>
+        </div>
+
+        <div class="form-container">
+
+            <!-- ENTRADA: SUPERMERCADO (lista suspensa) -->
+            <select id="supermarketSelect">
+                <option value="">Carregando supermercados...</option>
+            </select>
+
+            <!-- ENTRADA: DATA DA COMPRA -->
+            <input id="purchaseDate" type="date" />
+
+        </div>
+
+        <div class="item-form">
+
+            <h3 class="section-title">Adicionar item</h3>
+
+            <div class="form-container">
+
+                <!-- ENTRADA: NOME DO PRODUTO -->
+                <input id="productName" type="text" placeholder="Nome do produto" />
+
+                <div class="item-row">
+                    <!-- ENTRADA: QUANTIDADE -->
+                    <input id="quantity" type="number" min="1" step="1" placeholder="Quantidade" />
+
+                    <!-- ENTRADA: PREÇO UNITÁRIO -->
+                    <input id="unitPrice" type="number" min="0" step="0.01" placeholder="Preço unitário (R$)" />
+                </div>
+
+                <!-- ENTRADA: PROMOÇÃO ATIVA -->
+                <label class="checkbox-label">
+                    <input id="promotionActive" type="checkbox" onchange="togglePromotionFields()" />
+                    Item em promoção?
+                </label>
+
+                <div id="promotionFields" class="promotion-fields hidden">
+                    <!-- ENTRADA: TIPO DE PROMOÇÃO -->
+                    <input id="promotionType" type="text" placeholder="Tipo da promoção (ex: Leve 3 Pague 2)" />
+
+                    <!-- ENTRADA: DESCRIÇÃO DA PROMOÇÃO -->
+                    <input id="promotionDescription" type="text" placeholder="Descrição da promoção" />
+                </div>
+
+                <button class="secondary-btn" onclick="addItem()">+ Adicionar Item</button>
+
+            </div>
+
+            <!-- LISTA DE ITENS JÁ ADICIONADOS -->
+            <div id="itemsList" class="items-list"></div>
+
+            <div id="totalDisplay" class="total-display">Total: R$ 0,00</div>
+
+        </div>
+
+        <div class="form-container">
+            <button class="primary-btn" onclick="savePurchase()">Salvar Compra</button>
+        </div>
+
+        <div class="window-footer">
+            <small>Sistema de Controle de Compras</small>
+        </div>
+
+    </div>
+</div>
+
+<script src="../js/new-purchase.js"></script>
+</body>
+</html>

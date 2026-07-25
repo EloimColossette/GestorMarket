@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface PurchaseRepository {
 
-    void save(
+    Integer save(
             PurchaseModel purchaseModel
     );
 

@@ -1,0 +1,100 @@
+/* ==============================================
+   new-purchase.css — Estilos da tela Nova Compra
+   (seção de itens, checkbox de promoção, lista)
+=============================================== */
+
+.section-title {
+    margin: 24px 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    opacity: 0.85;
+}
+
+.item-row {
+    display: flex;
+    gap: 12px;
+}
+
+.item-row input {
+    flex: 1;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.promotion-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.promotion-fields.hidden {
+    display: none;
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.item-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    padding: 12px 14px;
+    border-radius: 12px;
+    gap: 12px;
+}
+
+.item-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 14px;
+}
+
+.item-card-promo {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.item-card-subtotal {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.remove-item-btn {
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.remove-item-btn:hover {
+    transform: translateY(-2px);
+}
+
+.total-display {
+    margin-top: 14px;
+    text-align: right;
+    font-size: 16px;
+    font-weight: 700;
+}

@@ -136,6 +136,30 @@ body {
     color: rgba(255,255,255,0.55);
 }
 
+.form-container select {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    outline: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font-size: 15px;
+    font-family: 'Sora', sans-serif;
+    transition: background .2s, box-shadow .2s;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.form-container select:focus {
+    background: rgba(255,255,255,0.18);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
+}
+
+.form-container select option {
+    color: #000;
+}
+
 .form-container input:focus,
 .search-container input:focus {
     background: rgba(255,255,255,0.18);

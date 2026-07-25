@@ -18,7 +18,7 @@ public class PurchaseRepositoryImpl
             );
 
     @Override
-    public void save(
+    public Integer save(
             PurchaseModel purchaseModel
     ) {
 
@@ -37,41 +37,34 @@ public class PurchaseRepositoryImpl
                         Database.connect();
 
                 PreparedStatement stmt =
-                        conn.prepareStatement(sql)
+                        conn.prepareStatement(
+                                sql,
+                                Statement.RETURN_GENERATED_KEYS
+                        )
 
         ) {
 
-            stmt.setInt(
-                    1,
-                    purchaseModel.getSupermarketId()
-            );
-
-            stmt.setDate(
-                    2,
-                    Date.valueOf(
-                            purchaseModel.getPurchaseDate()
-                    )
-            );
-
-            stmt.setBigDecimal(
-                    3,
-                    purchaseModel.getTotal()
-            );
+            stmt.setInt(1, purchaseModel.getSupermarketId());
+            stmt.setDate(2, Date.valueOf(purchaseModel.getPurchaseDate()));
+            stmt.setBigDecimal(3, purchaseModel.getTotal());
 
             stmt.executeUpdate();
 
-            logger.info(
-                    "Purchase saved successfully!"
-            );
+            logger.info("Purchase saved successfully!");
+
+            try (
+                    ResultSet generatedKeys = stmt.getGeneratedKeys()
+            ) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                }
+            }
 
         } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Error saving purchase",
-                    e
-            );
+            logger.log(Level.SEVERE, "Error saving purchase", e);
         }
+
+        return null;
     }
 
     @Override
