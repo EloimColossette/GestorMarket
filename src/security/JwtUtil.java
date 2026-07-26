@@ -27,13 +27,15 @@ public class JwtUtil {
         return secret;
     }
 
+    private static final long SESSION_DURATION_MS = 1000L * 60 * 60 * 2;
+
     public static String generateToken(int userId, String email) {
         return JWT.create()
                 .withSubject(email)
                 .withClaim("userId", userId)
                 .withIssuedAt(new Date())
                 .withIssuer("SistemaCompras")
-                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
+                .withExpiresAt(new Date(System.currentTimeMillis() + SESSION_DURATION_MS))
                 .sign(ALGORITHM);
     }
 

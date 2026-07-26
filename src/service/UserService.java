@@ -3,11 +3,7 @@ package service;
 import dto.UserRequest;
 import model.UserModel;
 
-import java.util.List;
-
 public interface UserService {
-
-    List<UserModel> findAllUsers() throws Exception;
 
     UserModel getOwnProfile(int authUserId) throws Exception;
 

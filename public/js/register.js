@@ -1,8 +1,3 @@
-/**
- * register.js
- * Handles new user registration.
- */
-
 async function register() {
     const firstName      = document.getElementById("firstName").value.trim();
     const lastName       = document.getElementById("lastName").value.trim();
@@ -58,7 +53,7 @@ async function register() {
     btn.disabled  = true;
 
     try {
-        const response = await fetch("http://localhost:8080/users", {
+        const response = await fetch(`${API_BASE_URL}/users`    , {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ firstName, lastName, cpf, phoneNumber, email, password })

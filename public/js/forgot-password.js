@@ -1,8 +1,3 @@
-/**
- * forgot-password.js
- * Sends a password recovery link to the user's email.
- */
-
 async function forgotPassword() {
     const email = document.getElementById("email").value.trim();
     const btn   = document.getElementById("btnSend");
@@ -21,7 +16,7 @@ async function forgotPassword() {
     btn.disabled  = true;
 
     try {
-        const response = await fetch("http://localhost:8080/password/forgot-password", {
+        const response = await fetch(`${API_BASE_URL}/password/forgot-password`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email })

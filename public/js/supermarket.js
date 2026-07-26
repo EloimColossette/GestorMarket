@@ -1,9 +1,4 @@
-/**
- * supermarket.js
- * Supermarket module — navigation, modals and reports.
- */
-
-const API_BASE = "http://localhost:8080";
+const API_BASE = API_BASE_URL;
 
 let chartInstance = null;
 

@@ -1,12 +1,4 @@
-/**
- * new-purchase.js
- * Módulo "Nova Compra" — carrega os supermercados já cadastrados
- * na lista suspensa, permite adicionar vários itens (produtos),
- * calcula o desconto de cada tipo de promoção e salva a compra
- * completa (cabeçalho + itens).
- */
-
-const API_URL = "http://localhost:8080";
+const API_URL = API_BASE_URL;
 
 // itens adicionados localmente antes de salvar a compra
 let purchaseItems = [];

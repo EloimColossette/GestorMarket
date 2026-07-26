@@ -1,9 +1,3 @@
-/**
- * login.js
- * Handles user authentication.
- */
-
-// ── SIGN IN ─────────────────────────────────────────────
 async function login(event) {
 
 
@@ -20,7 +14,7 @@ async function login(event) {
 
     try {
 
-        const response = await fetch("http://localhost:8080/login", {
+        const response = await fetch(`${API_BASE_URL}/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

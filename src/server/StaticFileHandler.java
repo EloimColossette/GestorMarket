@@ -1,11 +1,14 @@
 package server;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import envloader.EnvLoader;
 import java.io.*;
 import java.nio.file.Files;
 
 public class StaticFileHandler implements HttpHandler {
     private final String basePath;
+
+    private static final String ALLOWED_ORIGIN = EnvLoader.get("ALLOWED_ORIGIN");
 
     public StaticFileHandler(String basePath) {
         this.basePath = basePath;
@@ -16,7 +19,7 @@ public class StaticFileHandler implements HttpHandler {
         String method = exchange.getRequestMethod();
 
         // CORS headers sempre
-        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+        exchange.getResponseHeaders().add("Access-Control-Allow-Origin", ALLOWED_ORIGIN);
         exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type, Authorization");
 

@@ -25,10 +25,6 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
-    @Override
-    public List<UserModel> findAllUsers() throws Exception {
-        return userRepository.findAllUsers();
-    }
 
     @Override
     public void createUser(UserRequest user) throws Exception {

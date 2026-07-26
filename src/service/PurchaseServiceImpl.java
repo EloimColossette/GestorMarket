@@ -1,7 +1,6 @@
 package service;
 
-import dto.CreatePurchaseDTO;
-import dto.CreatePurchaseItemDTO;
+import dto.*;
 import exception.ApiException;
 import model.PurchaseItemModel;
 import model.PurchaseModel;
@@ -285,5 +284,32 @@ public class PurchaseServiceImpl implements PurchaseService {
             throw new ApiException("Purchase not found", 404);
         }
         return purchase;
+    }
+
+    @Override
+    public List<PurchaseReportItem> getPurchaseReport(
+            Integer userId, String supermarketName, LocalDate startDate, LocalDate endDate
+    ) {
+        return purchaseRepository.findReportByUser(userId, supermarketName, startDate, endDate);
+    }
+
+    @Override
+    public List<SupermarketSummaryDTO> getPurchaseSummary(Integer userId, Integer supermarketId, LocalDate date) {
+        return purchaseRepository.findSummaryByUser(userId, supermarketId, date);
+    }
+
+    @Override
+    public List<PurchaseDetailDTO> getPurchaseDetail(Integer userId, Integer supermarketId, LocalDate date) {
+
+        if (supermarketId == null) {
+            throw new ApiException("Supermarket is required", 400);
+        }
+
+        // 🔒 garante que o supermercado clicado é do usuário logado
+        if (supermarketRepository.findSupermarketByIdAndUser(supermarketId, userId) == null) {
+            throw new ApiException("Supermarket not found", 404);
+        }
+
+        return purchaseRepository.findDetailByUser(userId, supermarketId, date);
     }
 }

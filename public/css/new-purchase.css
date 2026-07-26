@@ -178,3 +178,35 @@
     overflow-y: auto;
     margin-top: 0;
 }
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 600px) {
+    .item-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .item-card {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .item-card-info {
+        flex: 1 1 100%;
+    }
+
+    .item-card-subtotal {
+        margin-left: auto;
+    }
+
+    .modal-box {
+        width: 94%;
+        padding: 16px;
+    }
+
+    .toggle-items-btn {
+        font-size: 14px;
+    }
+}

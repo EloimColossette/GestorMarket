@@ -1,9 +1,4 @@
-/**
- * register-supermarket.js
- * Handles supermarket registration and listing.
- */
-
-const API_URL = "http://localhost:8080";
+const API_URL = API_BASE_URL;
 
 // ── AUTH HEADER HELPER ───────────────────────────────────
 function authHeaders() {

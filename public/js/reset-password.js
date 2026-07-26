@@ -1,9 +1,3 @@
-/**
- * reset-password.js
- * Validates the token from the email link and sets a new password.
- */
-
-// ── AUTO-FILL TOKEN FROM URL ─────────────────────────────
 window.onload = function () {
     const params = new URLSearchParams(window.location.search);
     const token  = params.get("token");
@@ -45,7 +39,7 @@ async function resetPassword() {
     btn.disabled  = true;
 
     try {
-        const response = await fetch("http://localhost:8080/password/reset-password", {
+        const response = await fetch(`${API_BASE_URL}/password/reset-password`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token, newPassword })

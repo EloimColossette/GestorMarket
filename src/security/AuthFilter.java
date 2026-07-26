@@ -43,13 +43,15 @@ public class AuthFilter extends Filter {
                 return;
             }
 
-            // 🔑 Guarda o usuário autenticado na própria requisição,
-            // para os controllers usarem depois.
             int userId = decoded.getClaim("userId").asInt();
             String email = decoded.getSubject();
 
             exchange.setAttribute("authUserId", userId);
             exchange.setAttribute("authUserEmail", email);
+
+
+            String refreshedToken = JwtUtil.generateToken(userId, email);
+            exchange.getResponseHeaders().set("X-Refreshed-Token", refreshedToken);
 
             chain.doFilter(exchange);
 

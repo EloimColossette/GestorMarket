@@ -3,14 +3,20 @@ package controller;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import dto.CreatePurchaseDTO;
+import dto.PurchaseDetailDTO;
+import dto.SupermarketSummaryDTO;
 import exception.ApiException;
 import model.PurchaseModel;
 import service.PurchaseService;
 import util.JsonUtil;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PurchaseController implements HttpHandler {
 
@@ -27,7 +33,16 @@ public class PurchaseController implements HttpHandler {
 
         switch (method) {
             case "OPTIONS" -> { exchange.sendResponseHeaders(204, -1); exchange.close(); }
-            case "GET"     -> getAllPurchases(exchange);
+            case "GET" -> {
+                String path = exchange.getRequestURI().getPath();
+                if (path.equals("/purchases/summary")) {
+                    getPurchaseSummary(exchange);
+                } else if (path.equals("/purchases/detail")) {
+                    getPurchaseDetail(exchange);
+                } else {
+                    getAllPurchases(exchange);
+                }
+            }
             case "POST"    -> createPurchase(exchange);
             case "PUT"     -> updatePurchase(exchange);
             case "DELETE"  -> deletePurchase(exchange);
@@ -39,13 +54,95 @@ public class PurchaseController implements HttpHandler {
 
         Integer userId = (Integer) exchange.getAttribute("authUserId");
 
-        List<PurchaseModel> purchases = purchaseService.findAllPurchases(userId);
-        String response = JsonUtil.getGson().toJson(purchases);
+        Map<String, String> params = parseQuery(exchange.getRequestURI().getQuery());
+
+        String supermarketName = params.get("supermarket");
+        LocalDate startDate = parseDateParam(params.get("startDate"));
+        LocalDate endDate   = parseDateParam(params.get("endDate"));
+
+        Object result;
+
+        if (supermarketName != null || startDate != null || endDate != null) {
+            result = purchaseService.getPurchaseReport(userId, supermarketName, startDate, endDate);
+        } else {
+            result = purchaseService.findAllPurchases(userId);
+        }
+
+        String response = JsonUtil.getGson().toJson(result);
 
         exchange.getResponseHeaders().add("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
         exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
         exchange.close();
+    }
+
+    private void getPurchaseSummary(HttpExchange exchange) throws IOException {
+
+        Integer userId = (Integer) exchange.getAttribute("authUserId");
+        Map<String, String> params = parseQuery(exchange.getRequestURI().getQuery());
+
+        Integer supermarketId = parseIntParam(params.get("supermarketId"));
+        LocalDate date = parseDateParam(params.get("date"));
+
+        List<SupermarketSummaryDTO> result = purchaseService.getPurchaseSummary(userId, supermarketId, date);
+
+        String response = JsonUtil.getGson().toJson(result);
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+        exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
+        exchange.close();
+    }
+
+    private void getPurchaseDetail(HttpExchange exchange) throws IOException {
+        try {
+            Integer userId = (Integer) exchange.getAttribute("authUserId");
+            Map<String, String> params = parseQuery(exchange.getRequestURI().getQuery());
+
+            Integer supermarketId = parseIntParam(params.get("supermarketId"));
+            LocalDate date = parseDateParam(params.get("date"));
+
+            List<PurchaseDetailDTO> result = purchaseService.getPurchaseDetail(userId, supermarketId, date);
+
+            String response = JsonUtil.getGson().toJson(result);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+            exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
+
+        } catch (ApiException e) {
+            sendError(exchange, e.getMessage(), e.getStatusCode());
+        }
+        exchange.close();
+    }
+
+    private Integer parseIntParam(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new ApiException("ID de supermercado inválido", 400);
+        }
+    }
+
+    private Map<String, String> parseQuery(String query) {
+        Map<String, String> params = new HashMap<>();
+        if (query == null || query.isBlank()) return params;
+
+        for (String pair : query.split("&")) {
+            String[] kv = pair.split("=", 2);
+            String key = URLDecoder.decode(kv[0], StandardCharsets.UTF_8);
+            String value = kv.length > 1 ? URLDecoder.decode(kv[1], StandardCharsets.UTF_8) : "";
+            params.put(key, value);
+        }
+        return params;
+    }
+
+    private LocalDate parseDateParam(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return LocalDate.parse(value); // espera formato yyyy-MM-dd
+        } catch (Exception e) {
+            throw new ApiException("Formato de data inválido (use AAAA-MM-DD)", 400);
+        }
     }
 
     private void createPurchase(HttpExchange exchange) throws IOException {

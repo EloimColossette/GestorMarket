@@ -8,6 +8,7 @@ import service.*;
 
 import security.AuthFilter;
 import security.CorsFilter;
+import security.RateLimitFilter;
 
 import java.net.InetSocketAddress;
 import java.util.logging.Level;
@@ -60,9 +61,11 @@ public class Server {
             // Public routes — no AuthFilter
             var ctxLogin    = server.createContext("/login",    authController);
             ctxLogin.getFilters().add(new CorsFilter());
+            ctxLogin.getFilters().add(new RateLimitFilter(5, 15));
 
             var ctxPassword = server.createContext("/password", passwordResetController);
             ctxPassword.getFilters().add(new CorsFilter());
+            ctxPassword.getFilters().add(new RateLimitFilter(3, 15));
 
             // Protected routes — CorsFilter + AuthFilter
             // (AuthFilter itself also allows POST /users and /password/* without a token)
