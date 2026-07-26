@@ -2,27 +2,17 @@ package service;
 
 import dto.CreatePurchaseDTO;
 import model.PurchaseModel;
-
 import java.util.List;
 
 public interface PurchaseService {
 
-    void savePurchase(
-            CreatePurchaseDTO createPurchaseDTO
-    );
+    void savePurchase(CreatePurchaseDTO dto, Integer userId);
 
-    List<PurchaseModel> findAllPurchases();
+    List<PurchaseModel> findAllPurchases(Integer userId);
 
-    PurchaseModel findPurchaseById(
-            Integer purchasesId
-    );
+    PurchaseModel findPurchaseById(Integer purchasesId, Integer userId);
 
-    void updatePurchase(
-            Integer purchasesId,
-            CreatePurchaseDTO createPurchaseDTO
-    );
+    void updatePurchase(Integer purchasesId, CreatePurchaseDTO dto, Integer userId);
 
-    void deletePurchase(
-            Integer purchasesId
-    );
+    void deletePurchase(Integer purchasesId, Integer userId);
 }

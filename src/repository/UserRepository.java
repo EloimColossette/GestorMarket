@@ -7,6 +7,8 @@ public interface UserRepository {
 
     List<UserModel> findAllUsers() throws Exception;
 
+    UserModel findById(int id) throws Exception;
+
     void createUser(String email, String password, String firstName,
                     String lastName, String cpf, String phoneNumber) throws Exception;
 

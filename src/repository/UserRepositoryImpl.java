@@ -40,6 +40,36 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public UserModel findById(int id) throws Exception {
+
+        String sql = "SELECT * FROM users WHERE user_id = ?";
+        Connection conn = Database.connect();
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                UserModel user = new UserModel();
+                user.setId(rs.getInt("user_id"));
+                user.setEmail(rs.getString("email"));
+                user.setFirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
+                user.setCpf(rs.getString("cpf"));
+                user.setPassword(rs.getString("password"));
+                user.setPhoneNumber(rs.getString("phone_number"));
+                return user;
+            }
+
+        } finally {
+            conn.close();
+        }
+
+        return null;
+    }
+
+    @Override
     public void createUser(String email, String password, String firstName,
                            String lastName, String cpf, String phoneNumber) {
 

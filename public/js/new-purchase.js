@@ -1,14 +1,26 @@
 /**
  * new-purchase.js
  * Módulo "Nova Compra" — carrega os supermercados já cadastrados
- * na lista suspensa, permite adicionar vários itens (produtos)
- * e salva a compra completa (cabeçalho + itens).
+ * na lista suspensa, permite adicionar vários itens (produtos),
+ * calcula o desconto de cada tipo de promoção e salva a compra
+ * completa (cabeçalho + itens).
  */
 
 const API_URL = "http://localhost:8080";
 
 // itens adicionados localmente antes de salvar a compra
 let purchaseItems = [];
+
+// controla se a lista de itens está expandida ou recolhida
+let itemsListOpen = false;
+
+// ── AUTH GUARD ───────────────────────────────────────────
+(function checkAuth() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.href = "login.html";
+    }
+})();
 
 // ── AUTH HEADER HELPER ───────────────────────────────────
 function authHeaders() {
@@ -22,6 +34,7 @@ function authHeaders() {
 // ── INIT ─────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
 
+    // sugere a data de hoje já preenchida
     document.getElementById("purchaseDate").value =
         new Date().toISOString().split("T")[0];
 
@@ -40,7 +53,19 @@ async function loadSupermarkets() {
         });
 
         if (!response.ok) {
-            throw new Error("Erro ao carregar supermercados");
+
+            const errorText = await response.text();
+
+            // token ausente/expirado -> manda de volta pro login
+            if (response.status === 401) {
+                alert("Sua sessão expirou. Faça login novamente.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            throw new Error(
+                `Erro ao carregar supermercados (HTTP ${response.status}): ${errorText}`
+            );
         }
 
         const supermarkets = await response.json();
@@ -52,6 +77,7 @@ async function loadSupermarkets() {
             return;
         }
 
+        // opção inicial vazia (obriga o usuário a escolher)
         select.innerHTML = `<option value="">Selecione o supermercado...</option>`;
 
         supermarkets.forEach(item => {
@@ -67,21 +93,85 @@ async function loadSupermarkets() {
     }
 }
 
-// ── MOSTRA/ESCONDE OS CAMPOS DE PROMOÇÃO ─────────────────
+// ── MOSTRA/ESCONDE O BLOCO DE PROMOÇÃO (checkbox) ────────
 window.togglePromotionFields = function () {
     const checked = document.getElementById("promotionActive").checked;
     document.getElementById("promotionFields").classList.toggle("hidden", !checked);
+
+    if (!checked) {
+        document.getElementById("promotionType").value = "";
+        togglePromotionTypeFields();
+    }
 };
+
+// ── MOSTRA SÓ OS CAMPOS DO TIPO DE PROMOÇÃO ESCOLHIDO ────
+window.togglePromotionTypeFields = function () {
+
+    const type = document.getElementById("promotionType").value;
+
+    document.getElementById("levePagueFields")
+        .classList.toggle("hidden", type !== "leve_pague");
+
+    document.getElementById("promotionPercent")
+        .classList.toggle("hidden", type !== "percentual");
+
+    document.getElementById("promotionDiscountValue")
+        .classList.toggle("hidden", type !== "valor_fixo");
+};
+
+// ── CALCULA O SUBTOTAL DE ACORDO COM O TIPO DE PROMOÇÃO ──
+function calculateSubtotal({
+    quantity,
+    unitPrice,
+    promotionActive,
+    promotionType,
+    promotionBuyQuantity,
+    promotionPayQuantity,
+    promotionPercent,
+    promotionDiscountValue
+}) {
+
+    const fullPrice = quantity * unitPrice;
+
+    if (!promotionActive || !promotionType) {
+        return fullPrice;
+    }
+
+    if (promotionType === "leve_pague") {
+
+        const fullGroups = Math.floor(quantity / promotionBuyQuantity);
+        const remainder = quantity % promotionBuyQuantity;
+        const payableUnits = (fullGroups * promotionPayQuantity) + remainder;
+
+        return payableUnits * unitPrice;
+    }
+
+    if (promotionType === "percentual") {
+        return fullPrice * (1 - (promotionPercent / 100));
+    }
+
+    if (promotionType === "valor_fixo") {
+        const result = fullPrice - promotionDiscountValue;
+        return result < 0 ? 0 : result;
+    }
+
+    return fullPrice;
+}
 
 // ── ADICIONA UM ITEM À LISTA LOCAL ───────────────────────
 window.addItem = function () {
 
-    const productName  = document.getElementById("productName").value.trim();
-    const quantity      = parseInt(document.getElementById("quantity").value, 10);
-    const unitPrice     = parseFloat(document.getElementById("unitPrice").value);
+    const productName = document.getElementById("productName").value.trim();
+    const quantity     = parseInt(document.getElementById("quantity").value, 10);
+    const unitPrice    = parseFloat(document.getElementById("unitPrice").value);
     const promotionActive = document.getElementById("promotionActive").checked;
-    const promotionType   = document.getElementById("promotionType").value.trim();
+    const promotionType   = document.getElementById("promotionType").value;
     const promotionDescription = document.getElementById("promotionDescription").value.trim();
+
+    const promotionBuyQuantity = parseInt(document.getElementById("promotionBuyQuantity").value, 10);
+    const promotionPayQuantity = parseInt(document.getElementById("promotionPayQuantity").value, 10);
+    const promotionPercent = parseFloat(document.getElementById("promotionPercent").value);
+    const promotionDiscountValue = parseFloat(document.getElementById("promotionDiscountValue").value);
 
     if (!productName) {
         alert("Informe o nome do produto!");
@@ -98,24 +188,68 @@ window.addItem = function () {
         return;
     }
 
-    const subtotal = quantity * unitPrice;
+    if (promotionActive && !promotionType) {
+        alert("Selecione o tipo da promoção!");
+        return;
+    }
 
-    purchaseItems.push({
+    if (promotionActive && promotionType === "leve_pague") {
+
+        if (!promotionBuyQuantity || !promotionPayQuantity) {
+            alert("Informe os valores de 'Leve' e 'Pague'!");
+            return;
+        }
+
+        if (promotionPayQuantity > promotionBuyQuantity) {
+            alert("'Pague' não pode ser maior que 'Leve'!");
+            return;
+        }
+    }
+
+    if (promotionActive && promotionType === "percentual") {
+
+        if (!promotionPercent || promotionPercent <= 0 || promotionPercent > 100) {
+            alert("Informe um percentual de desconto válido (1 a 100)!");
+            return;
+        }
+    }
+
+    if (promotionActive && promotionType === "valor_fixo") {
+
+        if (!promotionDiscountValue || promotionDiscountValue <= 0) {
+            alert("Informe um valor de desconto válido!");
+            return;
+        }
+    }
+
+    const item = {
         productName,
         quantity,
         unitPrice,
         promotionActive,
-        promotionType: promotionActive ? (promotionType || null) : null,
+        promotionType: promotionActive ? promotionType : null,
         promotionDescription: promotionActive ? (promotionDescription || null) : null,
-        subtotal
-    });
+        promotionBuyQuantity: promotionActive && promotionType === "leve_pague" ? promotionBuyQuantity : null,
+        promotionPayQuantity: promotionActive && promotionType === "leve_pague" ? promotionPayQuantity : null,
+        promotionPercent: promotionActive && promotionType === "percentual" ? promotionPercent : null,
+        promotionDiscountValue: promotionActive && promotionType === "valor_fixo" ? promotionDiscountValue : null
+    };
 
+    item.subtotal = calculateSubtotal(item);
+
+    purchaseItems.push(item);
+
+    // limpa o formulário de item
     document.getElementById("productName").value = "";
     document.getElementById("quantity").value = "";
     document.getElementById("unitPrice").value = "";
     document.getElementById("promotionActive").checked = false;
     document.getElementById("promotionType").value = "";
     document.getElementById("promotionDescription").value = "";
+    document.getElementById("promotionBuyQuantity").value = "";
+    document.getElementById("promotionPayQuantity").value = "";
+    document.getElementById("promotionPercent").value = "";
+    document.getElementById("promotionDiscountValue").value = "";
     togglePromotionFields();
 
     renderItems();
@@ -127,37 +261,127 @@ window.removeItem = function (index) {
     renderItems();
 };
 
-// ── RENDERIZA A LISTA DE ITENS E O TOTAL ─────────────────
-function renderItems() {
+// ── TEXTO AMIGÁVEL DA PROMOÇÃO (só para exibição) ────────
+function promotionLabel(item) {
 
-    const container = document.getElementById("itemsList");
-    container.innerHTML = "";
+    if (item.promotionType === "leve_pague") {
+        return `Leve ${item.promotionBuyQuantity} Pague ${item.promotionPayQuantity}`;
+    }
 
-    let total = 0;
+    if (item.promotionType === "percentual") {
+        return `${item.promotionPercent}% de desconto`;
+    }
 
-    purchaseItems.forEach((item, index) => {
+    if (item.promotionType === "valor_fixo") {
+        return `Desconto de R$ ${item.promotionDiscountValue.toFixed(2)}`;
+    }
 
-        total += item.subtotal;
+    return "Promoção";
+}
 
-        const div = document.createElement("div");
-        div.className = "item-card";
+// quantidade máxima de itens exibidos na lista inline;
+// acima disso, o botão abre o modal com a lista completa
+const INLINE_ITEMS_LIMIT = 5;
 
-        div.innerHTML = `
+// ── MONTA O HTML DE UM CARD DE ITEM ──────────────────────
+function buildItemCardHtml(item, index) {
+
+    return `
+        <div class="item-card">
             <div class="item-card-info">
                 <span>${item.productName} — ${item.quantity}x R$ ${item.unitPrice.toFixed(2)}</span>
                 ${item.promotionActive
-                    ? `<span class="item-card-promo">🏷️ ${item.promotionType || "Promoção"}${item.promotionDescription ? " — " + item.promotionDescription : ""}</span>`
+                    ? `<span class="item-card-promo">🏷️ ${promotionLabel(item)}${item.promotionDescription ? " — " + item.promotionDescription : ""}</span>`
                     : ""}
             </div>
             <div class="item-card-subtotal">R$ ${item.subtotal.toFixed(2)}</div>
             <button class="remove-item-btn" onclick="removeItem(${index})">✕</button>
-        `;
+        </div>
+    `;
+}
 
-        container.appendChild(div);
+// ── RENDERIZA A LISTA DE ITENS E O TOTAL ─────────────────
+function renderItems() {
+
+    let total = 0;
+    let itemsHtml = "";
+
+    purchaseItems.forEach((item, index) => {
+        total += item.subtotal;
+        itemsHtml += buildItemCardHtml(item, index);
     });
+
+    // lista inline (só até o limite) e lista do modal (sempre completa)
+    document.getElementById("itemsList").innerHTML = itemsHtml;
+    document.getElementById("itemsListModal").innerHTML = itemsHtml;
 
     document.getElementById("totalDisplay").textContent =
         "Total: R$ " + total.toFixed(2);
+
+    document.getElementById("totalDisplayModal").textContent =
+        "Total: R$ " + total.toFixed(2);
+
+    updateToggleItemsLabel(total);
+
+    // se a lista diminuiu para dentro do limite, fecha o modal
+    // (se estiver aberto) e volta pro comportamento normal
+    if (purchaseItems.length <= INLINE_ITEMS_LIMIT) {
+        closeItemsModal();
+    }
+}
+
+// ── BOTÃO: ABRE A LISTA INLINE OU O MODAL, DEPENDENDO DA QUANTIDADE ──
+window.toggleItemsList = function () {
+
+    if (purchaseItems.length > INLINE_ITEMS_LIMIT) {
+        openItemsModal();
+        return;
+    }
+
+    itemsListOpen = !itemsListOpen;
+
+    document.getElementById("itemsList").classList.toggle("hidden", !itemsListOpen);
+    document.getElementById("toggleItemsArrow").classList.toggle("open", itemsListOpen);
+};
+
+// ── ABRE/FECHA O MODAL COM A LISTA COMPLETA ──────────────
+window.openItemsModal = function () {
+    document.getElementById("itemsList").classList.add("hidden");
+    itemsListOpen = false;
+    document.getElementById("toggleItemsArrow").classList.remove("open");
+    document.getElementById("itemsModalOverlay").classList.remove("hidden");
+};
+
+window.closeItemsModal = function () {
+    document.getElementById("itemsModalOverlay").classList.add("hidden");
+};
+
+// fecha o modal ao clicar fora da caixa (no fundo escurecido)
+window.closeItemsModalOnOverlay = function (event) {
+    if (event.target.id === "itemsModalOverlay") {
+        closeItemsModal();
+    }
+};
+
+// ── ATUALIZA O TEXTO DO BOTÃO (quantidade de itens) ──────
+function updateToggleItemsLabel(total) {
+
+    const label = document.getElementById("toggleItemsLabel");
+    const arrow = document.getElementById("toggleItemsArrow");
+    const count = purchaseItems.length;
+
+    if (count === 0) {
+        label.textContent = "Nenhum item adicionado";
+        arrow.textContent = "▼";
+        return;
+    }
+
+    const plural = count === 1 ? "item" : "itens";
+    label.textContent = `${count} ${plural} adicionado(s) — R$ ${total.toFixed(2)}`;
+
+    // acima do limite, o ícone vira uma "lupa" indicando que abre o modal
+    arrow.textContent = count > INLINE_ITEMS_LIMIT ? "🔍" : "▼";
+    arrow.classList.remove("open");
 }
 
 // ── SALVA A NOVA COMPRA (CABEÇALHO + ITENS) ──────────────
@@ -188,7 +412,8 @@ window.savePurchase = async function () {
         });
 
         if (!response.ok) {
-            throw new Error("Erro ao salvar compra");
+            const errorText = await response.text();
+            throw new Error(errorText || "Erro ao salvar compra");
         }
 
         alert("Compra registrada com sucesso!");
@@ -196,7 +421,7 @@ window.savePurchase = async function () {
 
     } catch (err) {
         console.error("Erro ao salvar compra:", err);
-        alert("Erro ao registrar compra");
+        alert(err.message || "Erro ao registrar compra");
     }
 };
 

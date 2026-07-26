@@ -1,132 +1,70 @@
 package service;
 
 import dto.CreateSupermarketDTO;
+import exception.ApiException;
 import model.SupermarketModel;
 import repository.SupermarketRepository;
+import repository.SupermarketRepositoryImpl;
 
 import java.util.List;
 
-public class SupermarketServiceImpl
-        implements SupermarketService {
+public class SupermarketServiceImpl implements SupermarketService {
 
-    private final SupermarketRepository
-            supermarketRepository;
+    private final SupermarketRepository supermarketRepository;
 
-    public SupermarketServiceImpl(
-            SupermarketRepository supermarketRepository
-    ) {
-
-        this.supermarketRepository =
-                supermarketRepository;
+    public SupermarketServiceImpl(SupermarketRepository supermarketRepository) {
+        this.supermarketRepository = supermarketRepository;
     }
 
     @Override
-    public void saveSupermarket(
-            CreateSupermarketDTO createSupermarketDTO
-    ) {
+    public void saveSupermarket(CreateSupermarketDTO dto, Integer userId) {
 
-        validateSupermarket(
-                createSupermarketDTO
-        );
+        validateSupermarket(dto);
 
+        SupermarketModel supermarket = new SupermarketModel();
+        supermarket.setName(dto.getName());
+        supermarket.setUserId(userId);
+
+        supermarketRepository.saveSupermarket(supermarket);
+    }
+
+    @Override
+    public List<SupermarketModel> findAllSupermarkets(Integer userId) {
+        return supermarketRepository.findAllSupermarketsByUser(userId);
+    }
+
+    @Override
+    public SupermarketModel findSupermarketById(Integer supermarketsId, Integer userId) {
         SupermarketModel supermarket =
-                new SupermarketModel();
-
-        supermarket.setName(
-                createSupermarketDTO.getName()
-        );
-
-        supermarketRepository.saveSupermarket(
-                supermarket
-        );
-    }
-
-    @Override
-    public List<SupermarketModel>
-    findAllSupermarkets() {
-
-        return supermarketRepository.findAllSupermarkets();
-    }
-
-    @Override
-    public SupermarketModel findSupermarketById(
-            Integer supermarketsId
-    ) {
-
-        return supermarketRepository.findSupermarketById(
-                supermarketsId
-        );
-    }
-
-    @Override
-    public void updateSupermarket(
-            Integer supermarketsId,
-            CreateSupermarketDTO createSupermarketDTO
-    ) {
-
-        SupermarketModel supermarket =
-                supermarketRepository.findSupermarketById(
-                        supermarketsId
-                );
+                supermarketRepository.findSupermarketByIdAndUser(supermarketsId, userId);
 
         if (supermarket == null) {
-
-            throw new IllegalArgumentException(
-                    "Supermarket not found"
-            );
+            // 404 em vez de 403: não revela se o supermercado existe e é de outra pessoa
+            throw new ApiException("Supermarket not found", 404);
         }
-
-        validateSupermarket(
-                createSupermarketDTO
-        );
-
-        supermarket.setName(
-                createSupermarketDTO.getName()
-        );
-
-        supermarketRepository.updateSupermarket(
-                supermarket
-        );
+        return supermarket;
     }
 
     @Override
-    public void deleteSupermarket(
-            Integer supermarketsId
-    ) {
+    public void updateSupermarket(Integer supermarketsId, CreateSupermarketDTO dto, Integer userId) {
 
-        SupermarketModel supermarket =
-                supermarketRepository.findSupermarketById(
-                        supermarketsId
-                );
+        SupermarketModel supermarket = findSupermarketById(supermarketsId, userId); // já valida dono
 
-        if (supermarket == null) {
+        validateSupermarket(dto);
+        supermarket.setName(dto.getName());
 
-            throw new IllegalArgumentException(
-                    "Supermarket not found"
-            );
-        }
-
-        supermarketRepository.deleteSupermarket(
-                supermarketsId
-        );
+        supermarketRepository.updateSupermarket(supermarket);
     }
 
-    private void validateSupermarket(
-            CreateSupermarketDTO createSupermarketDTO
-    ) {
+    @Override
+    public void deleteSupermarket(Integer supermarketsId, Integer userId) {
+        findSupermarketById(supermarketsId, userId); // garante que é dono antes de apagar
+        ((SupermarketRepositoryImpl) supermarketRepository).deleteSupermarket(supermarketsId, userId);
+    }
 
-        if (
-                createSupermarketDTO.getName()
-                        == null
-                        ||
-                        createSupermarketDTO.getName()
-                                .trim()
-                                .isEmpty()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "Supermarket name is required"
-            );
+    private void validateSupermarket(CreateSupermarketDTO dto) {
+        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
+            throw new ApiException("Supermarket name is required", 400);
         }
     }
 }

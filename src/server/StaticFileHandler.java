@@ -48,7 +48,17 @@ public class StaticFileHandler implements HttpHandler {
             path = "/html" + path;
         }
 
-        File file = new File(basePath, path);
+        File baseDir = new File(basePath).getCanonicalFile();
+        File file = new File(baseDir, path).getCanonicalFile();
+
+        // Garante que o caminho resolvido continua DENTRO de basePath
+        if (!file.getPath().startsWith(baseDir.getPath() + File.separator)
+                && !file.equals(baseDir)) {
+            exchange.sendResponseHeaders(403, -1);
+            exchange.close();
+            return;
+        }
+
         System.out.println("Buscando arquivo em: " + file.getAbsolutePath());
 
         if (!file.exists()) {

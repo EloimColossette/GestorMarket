@@ -1,26 +1,19 @@
 package repository;
 
 import model.SupermarketModel;
-
 import java.util.List;
 
 public interface SupermarketRepository {
 
-    void saveSupermarket(
-            SupermarketModel supermarketModel
-    );
+    void saveSupermarket(SupermarketModel supermarketModel);
 
-    List<SupermarketModel> findAllSupermarkets();
 
-    SupermarketModel findSupermarketById(
-            Integer supermarketsId
-    );
+    List<SupermarketModel> findAllSupermarketsByUser(Integer userId);
 
-    void updateSupermarket(
-            SupermarketModel supermarketModel
-    );
 
-    void deleteSupermarket(
-            Integer supermarketsId
-    );
+    SupermarketModel findSupermarketByIdAndUser(Integer supermarketsId, Integer userId);
+
+    void updateSupermarket(SupermarketModel supermarketModel);
+
+    void deleteSupermarket(Integer supermarketsId);
 }

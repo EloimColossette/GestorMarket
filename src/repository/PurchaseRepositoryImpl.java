@@ -68,247 +68,130 @@ public class PurchaseRepositoryImpl
     }
 
     @Override
-    public List<PurchaseModel> findAll() {
+    public List<PurchaseModel> findAllByUser(Integer userId) {
 
-        List<PurchaseModel> purchases =
-                new ArrayList<>();
+        List<PurchaseModel> purchases = new ArrayList<>();
 
         String sql = """
-            SELECT *
-            FROM purchases
-            """;
+        SELECT p.*
+        FROM purchases p
+        JOIN supermarkets s ON s.supermarkets_id = p.supermarket_id
+        WHERE s.user_id = ?
+        """;
 
-        try (
+        try (Connection conn = Database.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                Connection conn =
-                        Database.connect();
+            stmt.setInt(1, userId);
 
-                PreparedStatement stmt =
-                        conn.prepareStatement(sql);
-
-                ResultSet resultSet =
-                        stmt.executeQuery()
-
-        ) {
-
-            while (resultSet.next()) {
-
-                PurchaseModel purchase =
-                        new PurchaseModel();
-
-                purchase.setPurchasesId(
-                        resultSet.getInt(
-                                "purchases_id"
-                        )
-                );
-
-                purchase.setSupermarketId(
-                        resultSet.getInt(
-                                "supermarket_id"
-                        )
-                );
-
-                purchase.setPurchaseDate(
-                        resultSet.getDate(
-                                "purchase_date"
-                        ).toLocalDate()
-                );
-
-                purchase.setTotal(
-                        resultSet.getBigDecimal(
-                                "total"
-                        )
-                );
-
-                purchases.add(
-                        purchase
-                );
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                while (resultSet.next()) {
+                    purchases.add(mapRow(resultSet));
+                }
             }
 
         } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Error loading purchases",
-                    e
-            );
+            logger.log(Level.SEVERE, "Error loading purchases", e);
         }
 
         return purchases;
     }
 
     @Override
-    public PurchaseModel findById(
-            Integer purchasesId
-    ) {
+    public PurchaseModel findByIdAndUser(Integer purchasesId, Integer userId) {
 
         String sql = """
-            SELECT *
-            FROM purchases
-            WHERE purchases_id = ?
-            """;
+        SELECT p.*
+        FROM purchases p
+        JOIN supermarkets s ON s.supermarkets_id = p.supermarket_id
+        WHERE p.purchases_id = ? AND s.user_id = ?
+        """;
 
-        try (
+        try (Connection conn = Database.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                Connection conn =
-                        Database.connect();
+            stmt.setInt(1, purchasesId);
+            stmt.setInt(2, userId);
 
-                PreparedStatement stmt =
-                        conn.prepareStatement(sql)
-
-        ) {
-
-            stmt.setInt(
-                    1,
-                    purchasesId
-            );
-
-            ResultSet resultSet =
-                    stmt.executeQuery();
-
-            if (resultSet.next()) {
-
-                PurchaseModel purchase =
-                        new PurchaseModel();
-
-                purchase.setPurchasesId(
-                        resultSet.getInt(
-                                "purchases_id"
-                        )
-                );
-
-                purchase.setSupermarketId(
-                        resultSet.getInt(
-                                "supermarket_id"
-                        )
-                );
-
-                purchase.setPurchaseDate(
-                        resultSet.getDate(
-                                "purchase_date"
-                        ).toLocalDate()
-                );
-
-                purchase.setTotal(
-                        resultSet.getBigDecimal(
-                                "total"
-                        )
-                );
-
-                return purchase;
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                if (resultSet.next()) {
+                    return mapRow(resultSet);
+                }
             }
 
         } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Error finding purchase",
-                    e
-            );
+            logger.log(Level.SEVERE, "Error finding purchase", e);
         }
 
         return null;
     }
 
     @Override
-    public void update(
-            PurchaseModel purchaseModel
-    ) {
+    public void update(PurchaseModel purchaseModel, Integer userId) {
 
+        // A subquery garante que só atualiza se a compra pertencer
+        // (pelo supermercado atual) ao usuário informado em userId.
         String sql = """
-            UPDATE purchases
-            SET supermarket_id = ?,
-                purchase_date = ?,
-                total = ?
-            WHERE purchases_id = ?
-            """;
+        UPDATE purchases
+        SET supermarket_id = ?,
+            purchase_date = ?,
+            total = ?
+        WHERE purchases_id = ?
+          AND supermarket_id IN (
+              SELECT supermarkets_id FROM supermarkets WHERE user_id = ?
+          )
+        """;
 
-        try (
+        try (Connection conn = Database.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                Connection conn =
-                        Database.connect();
-
-                PreparedStatement stmt =
-                        conn.prepareStatement(sql)
-
-        ) {
-
-            stmt.setInt(
-                    1,
-                    purchaseModel.getSupermarketId()
-            );
-
-            stmt.setDate(
-                    2,
-                    Date.valueOf(
-                            purchaseModel.getPurchaseDate()
-                    )
-            );
-
-            stmt.setBigDecimal(
-                    3,
-                    purchaseModel.getTotal()
-            );
-
-            stmt.setInt(
-                    4,
-                    purchaseModel.getPurchasesId()
-            );
+            stmt.setInt(1, purchaseModel.getSupermarketId());
+            stmt.setDate(2, Date.valueOf(purchaseModel.getPurchaseDate()));
+            stmt.setBigDecimal(3, purchaseModel.getTotal());
+            stmt.setInt(4, purchaseModel.getPurchasesId());
+            stmt.setInt(5, userId);
 
             stmt.executeUpdate();
 
-            logger.info(
-                    "Purchase updated successfully!"
-            );
+            logger.info("Purchase updated successfully!");
 
         } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Error updating purchase",
-                    e
-            );
+            logger.log(Level.SEVERE, "Error updating purchase", e);
         }
     }
 
     @Override
-    public void delete(
-            Integer purchasesId
-    ) {
+    public void delete(Integer purchasesId, Integer userId) {
 
         String sql = """
-            DELETE FROM purchases
-            WHERE purchases_id = ?
-            """;
+        DELETE FROM purchases
+        WHERE purchases_id = ?
+          AND supermarket_id IN (
+              SELECT supermarkets_id FROM supermarkets WHERE user_id = ?
+          )
+        """;
 
-        try (
+        try (Connection conn = Database.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                Connection conn =
-                        Database.connect();
-
-                PreparedStatement stmt =
-                        conn.prepareStatement(sql)
-
-        ) {
-
-            stmt.setInt(
-                    1,
-                    purchasesId
-            );
-
+            stmt.setInt(1, purchasesId);
+            stmt.setInt(2, userId);
             stmt.executeUpdate();
 
-            logger.info(
-                    "Purchase deleted successfully!"
-            );
+            logger.info("Purchase deleted successfully!");
 
         } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Error deleting purchase",
-                    e
-            );
+            logger.log(Level.SEVERE, "Error deleting purchase", e);
         }
     }
+
+    private PurchaseModel mapRow(ResultSet rs) throws SQLException {
+        PurchaseModel purchase = new PurchaseModel();
+        purchase.setPurchasesId(rs.getInt("purchases_id"));
+        purchase.setSupermarketId(rs.getInt("supermarket_id"));
+        purchase.setPurchaseDate(rs.getDate("purchase_date").toLocalDate());
+        purchase.setTotal(rs.getBigDecimal("total"));
+        return purchase;
+    }
+
 }

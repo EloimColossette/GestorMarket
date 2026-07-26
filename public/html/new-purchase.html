@@ -61,19 +61,46 @@
                 </label>
 
                 <div id="promotionFields" class="promotion-fields hidden">
-                    <!-- ENTRADA: TIPO DE PROMOÇÃO -->
-                    <input id="promotionType" type="text" placeholder="Tipo da promoção (ex: Leve 3 Pague 2)" />
 
-                    <!-- ENTRADA: DESCRIÇÃO DA PROMOÇÃO -->
-                    <input id="promotionDescription" type="text" placeholder="Descrição da promoção" />
+                    <!-- ENTRADA: TIPO DE PROMOÇÃO -->
+                    <select id="promotionType" onchange="togglePromotionTypeFields()">
+                        <option value="">Selecione o tipo de promoção...</option>
+                        <option value="leve_pague">Leve X, Pague Y</option>
+                        <option value="percentual">Desconto percentual (%)</option>
+                        <option value="valor_fixo">Desconto em valor fixo (R$)</option>
+                    </select>
+
+                    <!-- CAMPOS DO TIPO "LEVE X, PAGUE Y" -->
+                    <div id="levePagueFields" class="item-row hidden">
+                        <input id="promotionBuyQuantity" type="number" min="1" step="1" placeholder="Leve (quantidade)" />
+                        <input id="promotionPayQuantity" type="number" min="1" step="1" placeholder="Pague (quantidade)" />
+                    </div>
+
+                    <!-- CAMPO DO TIPO "PERCENTUAL" -->
+                    <input id="promotionPercent" type="number" min="1" max="100" step="0.01"
+                           class="hidden" placeholder="Percentual de desconto (%)" />
+
+                    <!-- CAMPO DO TIPO "VALOR FIXO" -->
+                    <input id="promotionDiscountValue" type="number" min="0.01" step="0.01"
+                           class="hidden" placeholder="Valor do desconto (R$)" />
+
+                    <!-- ENTRADA: DESCRIÇÃO DA PROMOÇÃO (opcional) -->
+                    <input id="promotionDescription" type="text" placeholder="Observações da promoção (opcional)" />
+
                 </div>
 
                 <button class="secondary-btn" onclick="addItem()">+ Adicionar Item</button>
 
             </div>
 
-            <!-- LISTA DE ITENS JÁ ADICIONADOS -->
-            <div id="itemsList" class="items-list"></div>
+            <!-- BOTÃO PARA MOSTRAR/ESCONDER OS ITENS JÁ ADICIONADOS -->
+            <button id="toggleItemsBtn" class="secondary-btn toggle-items-btn" onclick="toggleItemsList()">
+                <span id="toggleItemsLabel">Nenhum item adicionado</span>
+                <span id="toggleItemsArrow" class="toggle-arrow">▼</span>
+            </button>
+
+            <!-- LISTA DE ITENS JÁ ADICIONADOS (recolhível) -->
+            <div id="itemsList" class="items-list hidden"></div>
 
             <div id="totalDisplay" class="total-display">Total: R$ 0,00</div>
 
@@ -91,5 +118,22 @@
 </div>
 
 <script src="../js/new-purchase.js"></script>
+
+<!-- MODAL: LISTA COMPLETA DE ITENS (usado quando há mais de 5 itens) -->
+<div id="itemsModalOverlay" class="modal-overlay hidden" onclick="closeItemsModalOnOverlay(event)">
+    <div class="modal-box">
+
+        <div class="modal-header">
+            <h3>Itens da compra</h3>
+            <button class="modal-close-btn" onclick="closeItemsModal()">✕</button>
+        </div>
+
+        <div id="itemsListModal" class="items-list modal-items-list"></div>
+
+        <div id="totalDisplayModal" class="total-display">Total: R$ 0,00</div>
+
+    </div>
+</div>
+
 </body>
 </html>

@@ -1,26 +1,17 @@
 package repository;
 
 import model.PurchaseModel;
-
 import java.util.List;
 
 public interface PurchaseRepository {
 
-    Integer save(
-            PurchaseModel purchaseModel
-    );
+    Integer save(PurchaseModel purchaseModel);
 
-    List<PurchaseModel> findAll();
+    List<PurchaseModel> findAllByUser(Integer userId);
 
-    PurchaseModel findById(
-            Integer purchasesId
-    );
+    PurchaseModel findByIdAndUser(Integer purchasesId, Integer userId);
 
-    void update(
-            PurchaseModel purchaseModel
-    );
+    void update(PurchaseModel purchaseModel, Integer userId);
 
-    void delete(
-            Integer purchasesId
-    );
+    void delete(Integer purchasesId, Integer userId);
 }

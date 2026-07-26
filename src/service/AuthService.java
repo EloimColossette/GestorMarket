@@ -21,8 +21,6 @@ public class AuthService {
         try {
             UserModel user = userRepository.findByEmail(email);
 
-            // SECURITY: same message whether the email doesn't exist or the password is wrong.
-            // Returning "user not found" for unknown emails would let attackers enumerate valid accounts.
             if (user == null) {
                 throw new ApiException("Invalid email or password", 401);
             }
@@ -33,7 +31,7 @@ public class AuthService {
                 throw new ApiException("Invalid email or password", 401);
             }
 
-            return JwtUtil.generateToken(user.getEmail());
+            return JwtUtil.generateToken(user.getId(), user.getEmail());
 
         } catch (ApiException e) {
             throw e;

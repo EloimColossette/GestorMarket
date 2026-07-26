@@ -2,6 +2,8 @@ package security;
 
 import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
+import com.auth0.jwt.interfaces.DecodedJWT;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -34,12 +36,20 @@ public class AuthFilter extends Filter {
         String token = authHeader.replace("Bearer ", "").trim();
 
         try {
-            String email = JwtUtil.validateToken(token);
+            DecodedJWT decoded = JwtUtil.validateToken(token);
 
-            if (email == null) {
+            if (decoded == null) {
                 sendResponse(exchange, "Invalid token", 401);
                 return;
             }
+
+            // 🔑 Guarda o usuário autenticado na própria requisição,
+            // para os controllers usarem depois.
+            int userId = decoded.getClaim("userId").asInt();
+            String email = decoded.getSubject();
+
+            exchange.setAttribute("authUserId", userId);
+            exchange.setAttribute("authUserEmail", email);
 
             chain.doFilter(exchange);
 
@@ -50,11 +60,9 @@ public class AuthFilter extends Filter {
     }
 
     private boolean isPublicRoute(String path, String method) {
-        // /login is public for everyone
-        // POST /users is public so anyone can register
         return path.equals("/login")
                 || (path.equals("/users") && method.equals("POST"))
-                || path.startsWith("/password"); // forgot-password and reset-password
+                || path.startsWith("/password");
     }
 
     private void sendResponse(HttpExchange exchange, String message, int status) throws IOException {

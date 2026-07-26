@@ -40,8 +40,8 @@ public class Server {
             AuthService         authService         = new AuthService(userRepository);
             PasswordResetService passwordResetService = new PasswordResetServiceImpl(userRepository, passwordResetRepository);
             SupermarketService  supermarketService  = new SupermarketServiceImpl(supermarketRepository);
-            PurchaseService     purchaseService     = new PurchaseServiceImpl(purchaseRepository, purchaseItemRepository);
-            PurchaseItemService purchaseItemService = new PurchaseItemServiceImpl(purchaseItemRepository);
+            PurchaseService     purchaseService     = new PurchaseServiceImpl(purchaseRepository, purchaseItemRepository, supermarketRepository);
+            PurchaseItemService purchaseItemService = new PurchaseItemServiceImpl(purchaseItemRepository, purchaseRepository);
 
             // =========================
             // CONTROLLERS

@@ -18,6 +18,20 @@ public class CreatePurchaseItemDTO {
 
     private String promotionDescription;
 
+    // ── usados apenas para CALCULAR o subtotal com desconto ──
+    // (não existem colunas próprias no banco; o resultado final
+    //  vai para a coluna "subtotal" e um resumo para "promotion_type")
+
+    // tipo "leve_pague": ex. Leve 2 Pague 1
+    private Integer promotionBuyQuantity;
+    private Integer promotionPayQuantity;
+
+    // tipo "percentual": ex. 10 (%)
+    private BigDecimal promotionPercent;
+
+    // tipo "valor_fixo": desconto em R$ sobre o total do item
+    private BigDecimal promotionDiscountValue;
+
     public CreatePurchaseItemDTO() {
     }
 
@@ -94,5 +108,37 @@ public class CreatePurchaseItemDTO {
 
     public void setPromotionDescription(String promotionDescription) {
         this.promotionDescription = promotionDescription;
+    }
+
+    public Integer getPromotionBuyQuantity() {
+        return promotionBuyQuantity;
+    }
+
+    public void setPromotionBuyQuantity(Integer promotionBuyQuantity) {
+        this.promotionBuyQuantity = promotionBuyQuantity;
+    }
+
+    public Integer getPromotionPayQuantity() {
+        return promotionPayQuantity;
+    }
+
+    public void setPromotionPayQuantity(Integer promotionPayQuantity) {
+        this.promotionPayQuantity = promotionPayQuantity;
+    }
+
+    public BigDecimal getPromotionPercent() {
+        return promotionPercent;
+    }
+
+    public void setPromotionPercent(BigDecimal promotionPercent) {
+        this.promotionPercent = promotionPercent;
+    }
+
+    public BigDecimal getPromotionDiscountValue() {
+        return promotionDiscountValue;
+    }
+
+    public void setPromotionDiscountValue(BigDecimal promotionDiscountValue) {
+        this.promotionDiscountValue = promotionDiscountValue;
     }
 }

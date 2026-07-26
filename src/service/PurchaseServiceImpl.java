@@ -2,36 +2,43 @@ package service;
 
 import dto.CreatePurchaseDTO;
 import dto.CreatePurchaseItemDTO;
+import exception.ApiException;
 import model.PurchaseItemModel;
 import model.PurchaseModel;
 import repository.PurchaseItemRepository;
 import repository.PurchaseRepository;
+import repository.SupermarketRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public class PurchaseServiceImpl
-        implements PurchaseService {
+public class PurchaseServiceImpl implements PurchaseService {
 
     private final PurchaseRepository purchaseRepository;
     private final PurchaseItemRepository purchaseItemRepository;
+    private final SupermarketRepository supermarketRepository;
 
     public PurchaseServiceImpl(
             PurchaseRepository purchaseRepository,
-            PurchaseItemRepository purchaseItemRepository
+            PurchaseItemRepository purchaseItemRepository,
+            SupermarketRepository supermarketRepository
     ) {
         this.purchaseRepository = purchaseRepository;
         this.purchaseItemRepository = purchaseItemRepository;
+        this.supermarketRepository = supermarketRepository;
     }
 
     @Override
-    public void savePurchase(
-            CreatePurchaseDTO createPurchaseDTO
-    ) {
+    public void savePurchase(CreatePurchaseDTO createPurchaseDTO, Integer userId) {
 
         if (createPurchaseDTO.getSupermarketId() == null) {
-            throw new IllegalArgumentException("Supermarket is required");
+            throw new ApiException("Supermarket is required", 400);
+        }
+
+        if (supermarketRepository.findSupermarketByIdAndUser(
+                createPurchaseDTO.getSupermarketId(), userId) == null) {
+            throw new ApiException("Supermarket not found", 404);
         }
 
         PurchaseModel purchaseModel = new PurchaseModel();
@@ -60,9 +67,7 @@ public class PurchaseServiceImpl
 
                 validatePurchaseItem(itemDTO);
 
-                BigDecimal subtotal =
-                        itemDTO.getUnitPrice()
-                                .multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
+                BigDecimal subtotal = calculateSubtotal(itemDTO);
 
                 PurchaseItemModel purchaseItem = new PurchaseItemModel();
 
@@ -71,11 +76,17 @@ public class PurchaseServiceImpl
                 purchaseItem.setQuantity(itemDTO.getQuantity());
                 purchaseItem.setUnitPrice(itemDTO.getUnitPrice());
 
-                purchaseItem.setPromotionActive(
-                        itemDTO.getPromotionActive() != null && itemDTO.getPromotionActive()
+                boolean promotionActive =
+                        itemDTO.getPromotionActive() != null && itemDTO.getPromotionActive();
+
+                purchaseItem.setPromotionActive(promotionActive);
+
+                purchaseItem.setPromotionType(
+                        promotionActive
+                                ? buildPromotionLabel(itemDTO)
+                                : null
                 );
 
-                purchaseItem.setPromotionType(itemDTO.getPromotionType());
                 purchaseItem.setPromotionDescription(itemDTO.getPromotionDescription());
                 purchaseItem.setSubtotal(subtotal);
 
@@ -88,7 +99,130 @@ public class PurchaseServiceImpl
         // atualiza o total da compra com a soma dos itens
         purchaseModel.setPurchasesId(purchasesId);
         purchaseModel.setTotal(total);
-        purchaseRepository.update(purchaseModel);
+        purchaseRepository.update(purchaseModel, userId); // ✅ corrigido: agora passa userId
+    }
+
+    /**
+     * Calcula o subtotal do item aplicando o desconto da promoção,
+     * de acordo com o tipo escolhido. Se não houver promoção ativa,
+     * o subtotal é simplesmente quantidade x preço unitário.
+     */
+    private BigDecimal calculateSubtotal(
+            CreatePurchaseItemDTO itemDTO
+    ) {
+
+        BigDecimal fullPrice =
+                itemDTO.getUnitPrice()
+                        .multiply(BigDecimal.valueOf(itemDTO.getQuantity()));
+
+        boolean promotionActive =
+                itemDTO.getPromotionActive() != null && itemDTO.getPromotionActive();
+
+        if (!promotionActive || itemDTO.getPromotionType() == null) {
+            return fullPrice;
+        }
+
+        String type = itemDTO.getPromotionType().trim();
+
+        return switch (type) {
+
+            // Ex.: Leve 2, Pague 1 -> a cada "leve" unidades, só paga "pague"
+            case "leve_pague" -> {
+
+                Integer buyQty = itemDTO.getPromotionBuyQuantity();
+                Integer payQty = itemDTO.getPromotionPayQuantity();
+
+                if (buyQty == null || buyQty <= 0 || payQty == null || payQty <= 0) {
+                    throw new IllegalArgumentException(
+                            "Informe corretamente os valores de 'Leve' e 'Pague'"
+                    );
+                }
+
+                if (payQty > buyQty) {
+                    throw new IllegalArgumentException(
+                            "'Pague' não pode ser maior que 'Leve'"
+                    );
+                }
+
+                int quantity = itemDTO.getQuantity();
+
+                int fullGroups = quantity / buyQty;
+                int remainder = quantity % buyQty;
+
+                int payableUnits = (fullGroups * payQty) + remainder;
+
+                yield itemDTO.getUnitPrice()
+                        .multiply(BigDecimal.valueOf(payableUnits));
+            }
+
+            // Ex.: 10% de desconto sobre o total do item
+            case "percentual" -> {
+
+                BigDecimal percent = itemDTO.getPromotionPercent();
+
+                if (percent == null
+                        || percent.compareTo(BigDecimal.ZERO) <= 0
+                        || percent.compareTo(BigDecimal.valueOf(100)) > 0) {
+
+                    throw new IllegalArgumentException(
+                            "Informe um percentual de desconto entre 1 e 100"
+                    );
+                }
+
+                BigDecimal discountFactor =
+                        BigDecimal.ONE.subtract(
+                                percent.divide(BigDecimal.valueOf(100))
+                        );
+
+                yield fullPrice.multiply(discountFactor);
+            }
+
+            // Ex.: R$ 5,00 de desconto no total do item
+            case "valor_fixo" -> {
+
+                BigDecimal discountValue = itemDTO.getPromotionDiscountValue();
+
+                if (discountValue == null || discountValue.compareTo(BigDecimal.ZERO) <= 0) {
+                    throw new IllegalArgumentException(
+                            "Informe um valor de desconto válido"
+                    );
+                }
+
+                BigDecimal result = fullPrice.subtract(discountValue);
+
+                // não deixa o subtotal ficar negativo
+                yield result.compareTo(BigDecimal.ZERO) < 0
+                        ? BigDecimal.ZERO
+                        : result;
+            }
+
+            default -> fullPrice;
+        };
+    }
+
+    /**
+     * Monta um texto legível para salvar na coluna promotion_type,
+     * a partir dos valores escolhidos pelo usuário.
+     */
+    private String buildPromotionLabel(
+            CreatePurchaseItemDTO itemDTO
+    ) {
+
+        if (itemDTO.getPromotionType() == null) {
+            return null;
+        }
+
+        return switch (itemDTO.getPromotionType().trim()) {
+
+            case "leve_pague" -> "Leve " + itemDTO.getPromotionBuyQuantity()
+                    + " Pague " + itemDTO.getPromotionPayQuantity();
+
+            case "percentual" -> itemDTO.getPromotionPercent() + "% de desconto";
+
+            case "valor_fixo" -> "Desconto de R$ " + itemDTO.getPromotionDiscountValue();
+
+            default -> itemDTO.getPromotionType();
+        };
     }
 
     private void validatePurchaseItem(CreatePurchaseItemDTO itemDTO) {
@@ -107,39 +241,49 @@ public class PurchaseServiceImpl
     }
 
     @Override
-    public void updatePurchase(Integer purchasesId, CreatePurchaseDTO createPurchaseDTO) {
+    public void updatePurchase(Integer purchasesId, CreatePurchaseDTO createPurchaseDTO, Integer userId) {
 
-        PurchaseModel purchaseModel = purchaseRepository.findById(purchasesId);
+        PurchaseModel purchaseModel = purchaseRepository.findByIdAndUser(purchasesId, userId);
 
         if (purchaseModel == null) {
-            throw new IllegalArgumentException("Purchase not found");
+            throw new ApiException("Purchase not found", 404);
+        }
+
+        if (createPurchaseDTO.getSupermarketId() != null
+                && supermarketRepository.findSupermarketByIdAndUser(
+                createPurchaseDTO.getSupermarketId(), userId) == null) {
+            throw new ApiException("Supermarket not found", 404);
         }
 
         purchaseModel.setSupermarketId(createPurchaseDTO.getSupermarketId());
         purchaseModel.setPurchaseDate(createPurchaseDTO.getPurchaseDate());
 
-        purchaseRepository.update(purchaseModel);
+        purchaseRepository.update(purchaseModel, userId);
     }
 
     @Override
-    public void deletePurchase(Integer purchasesId) {
+    public void deletePurchase(Integer purchasesId, Integer userId) {
 
-        PurchaseModel purchaseModel = purchaseRepository.findById(purchasesId);
+        PurchaseModel purchaseModel = purchaseRepository.findByIdAndUser(purchasesId, userId);
 
         if (purchaseModel == null) {
-            throw new IllegalArgumentException("Purchase not found");
+            throw new ApiException("Purchase not found", 404);
         }
 
-        purchaseRepository.delete(purchasesId);
+        purchaseRepository.delete(purchasesId, userId);
     }
 
     @Override
-    public List<PurchaseModel> findAllPurchases() {
-        return purchaseRepository.findAll();
+    public List<PurchaseModel> findAllPurchases(Integer userId) {
+        return purchaseRepository.findAllByUser(userId);
     }
 
     @Override
-    public PurchaseModel findPurchaseById(Integer purchasesId) {
-        return purchaseRepository.findById(purchasesId);
+    public PurchaseModel findPurchaseById(Integer purchasesId, Integer userId) {
+        PurchaseModel purchase = purchaseRepository.findByIdAndUser(purchasesId, userId);
+        if (purchase == null) {
+            throw new ApiException("Purchase not found", 404);
+        }
+        return purchase;
     }
 }

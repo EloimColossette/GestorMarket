@@ -1,226 +1,118 @@
 package service;
 
 import dto.CreatePurchaseItemDTO;
+import exception.ApiException;
 import model.PurchaseItemModel;
 import repository.PurchaseItemRepository;
+import repository.PurchaseRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class PurchaseItemServiceImpl
-        implements PurchaseItemService {
+public class PurchaseItemServiceImpl implements PurchaseItemService {
 
     private final PurchaseItemRepository purchaseItemRepository;
+    private final PurchaseRepository purchaseRepository; // NOVO
 
     public PurchaseItemServiceImpl(
-            PurchaseItemRepository purchaseItemRepository
+            PurchaseItemRepository purchaseItemRepository,
+            PurchaseRepository purchaseRepository // NOVO
     ) {
-        this.purchaseItemRepository =
-                purchaseItemRepository;
+        this.purchaseItemRepository = purchaseItemRepository;
+        this.purchaseRepository = purchaseRepository;
     }
 
     @Override
-    public void savePurchaseItem(
-            CreatePurchaseItemDTO createPurchaseItemDTO
-    ) {
+    public void savePurchaseItem(CreatePurchaseItemDTO dto, Integer userId) {
 
-        validatePurchaseItem(
-                createPurchaseItemDTO
-        );
+        validatePurchaseItem(dto);
 
-        BigDecimal subtotal =
-                calculateSubtotal(
-                        createPurchaseItemDTO
-                );
+        // 🔒 a compra informada precisa ser do usuário logado
+        if (purchaseRepository.findByIdAndUser(dto.getPurchaseId(), userId) == null) {
+            throw new ApiException("Purchase not found", 404);
+        }
 
-        PurchaseItemModel purchaseItem =
-                new PurchaseItemModel();
+        BigDecimal subtotal = calculateSubtotal(dto);
 
-        purchaseItem.setPurchaseId(
-                createPurchaseItemDTO.getPurchaseId()
-        );
+        PurchaseItemModel purchaseItem = new PurchaseItemModel();
+        purchaseItem.setPurchaseId(dto.getPurchaseId());
+        purchaseItem.setProductName(dto.getProductName());
+        purchaseItem.setQuantity(dto.getQuantity());
+        purchaseItem.setUnitPrice(dto.getUnitPrice());
+        purchaseItem.setPromotionActive(dto.getPromotionActive());
+        purchaseItem.setPromotionType(dto.getPromotionType());
+        purchaseItem.setPromotionDescription(dto.getPromotionDescription());
+        purchaseItem.setSubtotal(subtotal);
 
-        purchaseItem.setProductName(
-                createPurchaseItemDTO.getProductName()
-        );
-
-        purchaseItem.setQuantity(
-                createPurchaseItemDTO.getQuantity()
-        );
-
-        purchaseItem.setUnitPrice(
-                createPurchaseItemDTO.getUnitPrice()
-        );
-
-        purchaseItem.setPromotionActive(
-                createPurchaseItemDTO.getPromotionActive()
-        );
-
-        purchaseItem.setPromotionType(
-                createPurchaseItemDTO.getPromotionType()
-        );
-
-        purchaseItem.setPromotionDescription(
-                createPurchaseItemDTO.getPromotionDescription()
-        );
-
-        purchaseItem.setSubtotal(
-                subtotal
-        );
-
-        purchaseItemRepository.save(
-                purchaseItem
-        );
+        purchaseItemRepository.save(purchaseItem);
     }
 
     @Override
-    public void updatePurchaseItem(
-            Integer purchaseItemsId,
-            CreatePurchaseItemDTO createPurchaseItemDTO
-    ) {
+    public void updatePurchaseItem(Integer purchaseItemsId, CreatePurchaseItemDTO dto, Integer userId) {
 
         PurchaseItemModel purchaseItem =
-                purchaseItemRepository.findById(
-                        purchaseItemsId
-                );
+                purchaseItemRepository.findByIdAndUser(purchaseItemsId, userId);
 
         if (purchaseItem == null) {
-
-            throw new IllegalArgumentException(
-                    "Purchase item not found"
-            );
+            throw new ApiException("Purchase item not found", 404);
         }
 
-        validatePurchaseItem(
-                createPurchaseItemDTO
-        );
+        if (purchaseRepository.findByIdAndUser(dto.getPurchaseId(), userId) == null) {
+            throw new ApiException("Purchase not found", 404);
+        }
 
-        BigDecimal subtotal =
-                calculateSubtotal(
-                        createPurchaseItemDTO
-                );
+        validatePurchaseItem(dto);
+        BigDecimal subtotal = calculateSubtotal(dto);
 
-        purchaseItem.setPurchaseId(
-                createPurchaseItemDTO.getPurchaseId()
-        );
+        purchaseItem.setPurchaseId(dto.getPurchaseId());
+        purchaseItem.setProductName(dto.getProductName());
+        purchaseItem.setQuantity(dto.getQuantity());
+        purchaseItem.setUnitPrice(dto.getUnitPrice());
+        purchaseItem.setPromotionActive(dto.getPromotionActive());
+        purchaseItem.setPromotionType(dto.getPromotionType());
+        purchaseItem.setPromotionDescription(dto.getPromotionDescription());
+        purchaseItem.setSubtotal(subtotal);
 
-        purchaseItem.setProductName(
-                createPurchaseItemDTO.getProductName()
-        );
-
-        purchaseItem.setQuantity(
-                createPurchaseItemDTO.getQuantity()
-        );
-
-        purchaseItem.setUnitPrice(
-                createPurchaseItemDTO.getUnitPrice()
-        );
-
-        purchaseItem.setPromotionActive(
-                createPurchaseItemDTO.getPromotionActive()
-        );
-
-        purchaseItem.setPromotionType(
-                createPurchaseItemDTO.getPromotionType()
-        );
-
-        purchaseItem.setPromotionDescription(
-                createPurchaseItemDTO.getPromotionDescription()
-        );
-
-        purchaseItem.setSubtotal(
-                subtotal
-        );
-
-        purchaseItemRepository.update(
-                purchaseItem
-        );
+        purchaseItemRepository.update(purchaseItem, userId);
     }
 
     @Override
-    public void deletePurchaseItem(
-            Integer purchaseItemsId
-    ) {
+    public void deletePurchaseItem(Integer purchaseItemsId, Integer userId) {
 
-        PurchaseItemModel purchaseItem =
-                purchaseItemRepository.findById(
-                        purchaseItemsId
-                );
-
-        if (purchaseItem == null) {
-
-            throw new IllegalArgumentException(
-                    "Purchase item not found"
-            );
+        if (purchaseItemRepository.findByIdAndUser(purchaseItemsId, userId) == null) {
+            throw new ApiException("Purchase item not found", 404);
         }
 
-        purchaseItemRepository.delete(
-                purchaseItemsId
-        );
-    }
-
-    private void validatePurchaseItem(
-            CreatePurchaseItemDTO createPurchaseItemDTO
-    ) {
-
-        if (
-                createPurchaseItemDTO.getProductName() == null ||
-                        createPurchaseItemDTO.getProductName().trim().isEmpty()
-        ) {
-
-            throw new IllegalArgumentException(
-                    "Product name is required"
-            );
-        }
-
-        if (
-                createPurchaseItemDTO.getQuantity() <= 0
-        ) {
-
-            throw new IllegalArgumentException(
-                    "Quantity must be greater than zero"
-            );
-        }
-
-        if (
-                createPurchaseItemDTO.getUnitPrice()
-                        .compareTo(BigDecimal.ZERO) <= 0
-        ) {
-
-            throw new IllegalArgumentException(
-                    "Unit price must be greater than zero"
-            );
-        }
-    }
-
-    private BigDecimal calculateSubtotal(
-            CreatePurchaseItemDTO createPurchaseItemDTO
-    ) {
-
-        return createPurchaseItemDTO
-                .getUnitPrice()
-                .multiply(
-                        BigDecimal.valueOf(
-                                createPurchaseItemDTO.getQuantity()
-                        )
-                );
+        purchaseItemRepository.delete(purchaseItemsId, userId);
     }
 
     @Override
-    public List<PurchaseItemModel>
-    findAllPurchaseItems() {
-
-        return purchaseItemRepository.findAll();
+    public List<PurchaseItemModel> findAllPurchaseItems(Integer userId) {
+        return purchaseItemRepository.findAllByUser(userId);
     }
 
     @Override
-    public PurchaseItemModel findPurchaseItemById(
-            Integer purchaseItemsId
-    ) {
-
-        return purchaseItemRepository.findById(
-                purchaseItemsId
-        );
+    public PurchaseItemModel findPurchaseItemById(Integer purchaseItemsId, Integer userId) {
+        PurchaseItemModel item = purchaseItemRepository.findByIdAndUser(purchaseItemsId, userId);
+        if (item == null) {
+            throw new ApiException("Purchase item not found", 404);
+        }
+        return item;
     }
 
+    private void validatePurchaseItem(CreatePurchaseItemDTO dto) {
+        if (dto.getProductName() == null || dto.getProductName().trim().isEmpty()) {
+            throw new ApiException("Product name is required", 400);
+        }
+        if (dto.getQuantity() <= 0) {
+            throw new ApiException("Quantity must be greater than zero", 400);
+        }
+        if (dto.getUnitPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ApiException("Unit price must be greater than zero", 400);
+        }
+    }
+
+    private BigDecimal calculateSubtotal(CreatePurchaseItemDTO dto) {
+        return dto.getUnitPrice().multiply(BigDecimal.valueOf(dto.getQuantity()));
+    }
 }

@@ -35,23 +35,21 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
         UserModel user = userRepository.findByEmail(email);
 
-        if (user == null) {
-            throw new ApiException("Email not found", 404);
+        // Sempre responde "sucesso" pra não revelar quais e-mails existem.
+        // Só envia o e-mail de fato se o usuário existir.
+        if (user != null) {
+            passwordResetRepository.deleteTokensByUser(user.getId());
+
+            String token = UUID.randomUUID().toString();
+            Timestamp expiration = new Timestamp(System.currentTimeMillis() + (1000 * 60 * 10));
+
+            passwordResetRepository.saveToken(user.getId(), token, expiration);
+            emailService.enviarEmailRecuperacao(email, token);
+
+            logger.info("Reset token sent to: " + email);
+        } else {
+            logger.info("Password reset requested for non-existent email");
         }
-
-        passwordResetRepository.deleteTokensByUser(user.getId());
-
-        String token = UUID.randomUUID().toString();
-
-        Timestamp expiration = new Timestamp(
-                System.currentTimeMillis() + (1000 * 60 * 10) // 10 minutes
-        );
-
-        passwordResetRepository.saveToken(user.getId(), token, expiration);
-
-        emailService.enviarEmailRecuperacao(email, token);
-
-        logger.info("Reset token sent to: " + email);
     }
 
     @Override

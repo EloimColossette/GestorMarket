@@ -54,9 +54,20 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUser(int id, UserRequest user) throws Exception {
+    public UserModel getOwnProfile(int authUserId) throws Exception {
+        UserModel user = userRepository.findById(authUserId);
+        if (user == null) {
+            throw new ApiException("User not found", 404);
+        }
+        return user;
+    }
 
-        if (id <= 0) throw new ApiException("Invalid ID", 400);
+    @Override
+    public void updateUser(int id, int authUserId, UserRequest user) throws Exception {
+
+        if (id != authUserId) {
+            throw new ApiException("You can only update your own account", 403);
+        }
 
         if (user.getPhoneNumber() != null && !user.getPhoneNumber().isEmpty()) validatePhone(user.getPhoneNumber());
         if (user.getEmail()       != null && !user.getEmail().isEmpty())       validateEmail(user.getEmail());
@@ -68,20 +79,17 @@ public class UserServiceImpl implements UserService {
         }
 
         userRepository.updateUser(
-                id,
-                user.getEmail(),
-                password,
-                user.getFirstName(),
-                user.getLastName(),
-                user.getCpf(),
-                user.getPhoneNumber()
+                id, user.getEmail(), password, user.getFirstName(),
+                user.getLastName(), user.getCpf(), user.getPhoneNumber()
         );
     }
 
     @Override
-    public void partialUpdateUser(int id, UserRequest user) throws Exception {
+    public void partialUpdateUser(int id, int authUserId, UserRequest user) throws Exception {
 
-        if (id <= 0) throw new ApiException("Invalid ID", 400);
+        if (id != authUserId) {
+            throw new ApiException("You can only update your own account", 403);
+        }
 
         if (user.getPhoneNumber() != null && !user.getPhoneNumber().isEmpty()) validatePhone(user.getPhoneNumber());
         if (user.getEmail()       != null && !user.getEmail().isEmpty())       validateEmail(user.getEmail());
@@ -93,19 +101,16 @@ public class UserServiceImpl implements UserService {
         }
 
         userRepository.partialUpdateUser(
-                id,
-                user.getEmail(),
-                password,
-                user.getFirstName(),
-                user.getLastName(),
-                user.getCpf(),
-                user.getPhoneNumber()
+                id, user.getEmail(), password, user.getFirstName(),
+                user.getLastName(), user.getCpf(), user.getPhoneNumber()
         );
     }
 
     @Override
-    public void deleteUser(int id) throws Exception {
-        if (id <= 0) throw new ApiException("Invalid ID", 400);
+    public void deleteUser(int id, int authUserId) throws Exception {
+        if (id != authUserId) {
+            throw new ApiException("You can only delete your own account", 403);
+        }
         userRepository.deleteUser(id);
     }
 
