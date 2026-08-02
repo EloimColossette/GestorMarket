@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficos e Análises</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="../css/supermarket.css">
+    <link rel="stylesheet" href="../css/chart.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+
+<button class="secondary-btn back-btn-outside" onclick="window.location.href='reports-menu.html'">← Voltar</button>
+
+<div class="page">
+    <div class="window chart-page-window">
+
+        <div class="window-header">
+            <h1>Gráficos e Análises</h1>
+            <p>Visão geral dos seus gastos com base nos dados de compras</p>
+        </div>
+
+        <!-- FILTROS -->
+        <div class="chart-filters">
+            <div class="field">
+                <label for="filterMeses">Meses de histórico</label>
+                <select id="filterMeses">
+                    <option value="3">3 meses</option>
+                    <option value="6" selected>6 meses</option>
+                    <option value="12">12 meses</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="filterMesesFuturos">Meses de previsão</label>
+                <select id="filterMesesFuturos">
+                    <option value="1">1 mês</option>
+                    <option value="3" selected>3 meses</option>
+                    <option value="6">6 meses</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="filterTopProdutos">Top produtos</label>
+                <select id="filterTopProdutos">
+                    <option value="5">5 produtos</option>
+                    <option value="10" selected>10 produtos</option>
+                    <option value="20">20 produtos</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="chart-filters-actions">
+            <button class="primary-btn" onclick="loadDashboard()">📊 Atualizar</button>
+        </div>
+
+        <!-- ESTADO: CARREGANDO -->
+        <div id="loadingState" class="chart-loading" style="display: none;">
+            <div class="spinner"></div>
+            Carregando análises...
+        </div>
+
+        <!-- ESTADO: ERRO -->
+        <div id="errorState" class="chart-error" style="display: none;"></div>
+
+        <!-- ESTADO: VAZIO -->
+        <div id="emptyState" class="chart-empty" style="display: none;">
+            Nenhuma compra registrada ainda. Cadastre compras para ver as análises aqui.
+        </div>
+
+        <!-- CONTEÚDO -->
+        <div id="dashboardContent" style="display: none;">
+
+            <!-- CARDS DE RESUMO -->
+            <div id="statsGrid" class="stats-grid"></div>
+
+            <!-- GRÁFICO: GASTO MENSAL + PREVISÃO -->
+            <div class="chart-section" id="section-gasto_mensal_previsao" style="display: none;">
+                <h2>📈 Gasto mensal — histórico e previsão</h2>
+                <div class="chart-container">
+                    <img id="img-gasto_mensal_previsao" alt="Gasto mensal com previsão">
+                </div>
+            </div>
+
+            <!-- GRÁFICO: POR SUPERMERCADO -->
+            <div class="chart-section" id="section-por_supermercado" style="display: none;">
+                <h2>🏪 Gasto por supermercado</h2>
+                <div class="chart-container">
+                    <img id="img-por_supermercado" alt="Gasto por supermercado">
+                </div>
+            </div>
+
+            <!-- GRÁFICO: POR PRODUTO -->
+            <div class="chart-section" id="section-por_produto" style="display: none;">
+                <h2>🛒 Top produtos por gasto</h2>
+                <div class="chart-container">
+                    <img id="img-por_produto" alt="Top produtos por gasto">
+                </div>
+            </div>
+
+            <!-- GRÁFICO: PROMOÇÕES -->
+            <div class="chart-section" id="section-promocoes" style="display: none;">
+                <h2>🏷️ Promoções por supermercado</h2>
+                <div class="chart-container">
+                    <img id="img-promocoes" alt="Promoções por supermercado">
+                </div>
+            </div>
+
+        </div>
+
+        <div class="window-footer">
+            <small>Sistema de Controle de Compras</small>
+        </div>
+
+    </div>
+</div>
+<script src="../js/config.js"></script>
+<script src="../js/layout.js"></script>
+<script src="../js/chart.js"></script>
+</body>
+</html>

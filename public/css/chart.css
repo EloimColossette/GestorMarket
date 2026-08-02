@@ -1,0 +1,152 @@
+/* ==============================================
+   chart.css — Estilos da tela de Gráficos (analytics)
+   Background, navbar e window vêm do global.css
+=============================================== */
+
+.chart-page-window {
+    max-width: 900px;
+}
+
+/* ── FILTROS ─────────────────────────────── */
+.chart-filters {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.chart-filters .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.chart-filters label {
+    font-size: 12px;
+    opacity: 0.7;
+    font-weight: 500;
+}
+
+.chart-filters-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+.chart-filters-actions .primary-btn,
+.chart-filters-actions .secondary-btn {
+    width: auto;
+    flex: 1;
+}
+
+/* ── STATS ───────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 16px;
+    padding: 16px 18px;
+    backdrop-filter: blur(10px);
+    transition: transform .2s, background .2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255,255,255,0.14);
+}
+
+.stat-card .stat-label {
+    font-size: 12px;
+    opacity: 0.7;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.stat-card .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.stat-card .stat-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.65;
+}
+
+.trend-up   { color: #ff8787; }
+.trend-down { color: #63e6be; }
+.trend-flat { color: #ffe066; }
+
+/* ── SEÇÕES DE GRÁFICO ───────────────────── */
+.chart-section {
+    margin-bottom: 28px;
+    animation: fadeUp 0.35s ease both;
+}
+
+.chart-section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
+.chart-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+}
+
+.chart-container img {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 10px;
+    display: block;
+}
+
+/* ── ESTADOS ─────────────────────────────── */
+.chart-empty,
+.chart-loading,
+.chart-error {
+    text-align: center;
+    padding: 40px 20px;
+    opacity: 0.75;
+    font-size: 14px;
+}
+
+.chart-error {
+    color: #ffb4a2;
+}
+
+.chart-loading .spinner {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.25);
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── RESPONSIVE ──────────────────────────── */
+@media (max-width: 700px) {
+    .chart-filters {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .chart-filters-actions {
+        flex-direction: column;
+    }
+}

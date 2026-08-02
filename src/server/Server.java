@@ -85,6 +85,9 @@ public class Server {
             ctxPurchaseItems.getFilters().add(new CorsFilter());
             ctxPurchaseItems.getFilters().add(new AuthFilter());
 
+            var ctxAnalytics = server.createContext("/api/analytics", new AnalyticsProxyHandler());
+            ctxAnalytics.getFilters().add(new CorsFilter());
+
             // Static files — must be last (most generic path)
             server.createContext("/", new StaticFileHandler("public"))
                     .getFilters().add(new CorsFilter());

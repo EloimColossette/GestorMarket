@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://192.168.0.20:8080";
+const API_BASE_URL = window.location.origin;
 
 (function () {
     const originalFetch = window.fetch;

@@ -2,6 +2,7 @@ package application;
 
 import config.LogConfig;
 import server.Server;
+import server.AnalyticsProcessLauncher;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -18,6 +19,9 @@ public class Main {
             logger.info("Starting server...");
 
             Server.start();
+
+            // Sobe o microsservico Python (graficos/analytics) junto com o Java
+            AnalyticsProcessLauncher.start();
 
         } catch (Exception e) {
             logger.severe("Failed to start server!");
