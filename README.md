@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SistemaCompras
 
 Sistema de controle de compras de supermercado: cadastro de usuários, supermercados, compras e itens de compra, com um serviço de **analytics em Python** (gráficos, previsão de gastos, histórico de preço por produto) acoplado ao backend Java.
@@ -117,3 +118,7 @@ src/
 python_analytics/    # Serviço de analytics (Flask-like, biblioteca padrão)
 public/                # Frontend (HTML/CSS/JS estático)
 ```
+=======
+# GestorMarket
+Sistema de Compras para Supermercado e Controle Financeiro
+>>>>>>> 569197d71136b900c88c8a8500e2af27ca42bfd5
