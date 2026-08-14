@@ -128,6 +128,11 @@ public class UserServiceImpl implements UserService {
             String domain = email.substring(email.indexOf("@") + 1);
             Hashtable<String, String> env = new Hashtable<>();
             env.put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory");
+            // Sem timeout aqui, um domínio malicioso/DNS que não responde
+            // prende essa thread indefinidamente. Com pouca gente atendendo
+            // requisições, isso vira negação de serviço fácil.
+            env.put("com.sun.jndi.dns.timeout.initial", "2000");  // 2s por tentativa
+            env.put("com.sun.jndi.dns.timeout.retries", "1");     // só 1 retry -> no máx. ~4s
             DirContext ctx = new InitialDirContext(env);
             Attributes attrs = ctx.getAttributes(domain, new String[]{"MX"});
             Attribute attr = attrs.get("MX");

@@ -14,4 +14,6 @@ public interface PurchaseItemRepository {
     void update(PurchaseItemModel purchaseItemModel, Integer userId);
 
     void delete(Integer purchaseItemsId, Integer userId);
+
+    List<String> findDistinctProductNamesByUser(Integer userId);
 }

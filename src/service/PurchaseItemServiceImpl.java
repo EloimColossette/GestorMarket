@@ -5,6 +5,7 @@ import exception.ApiException;
 import model.PurchaseItemModel;
 import repository.PurchaseItemRepository;
 import repository.PurchaseRepository;
+import util.TextNormalizer;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -31,6 +32,11 @@ public class PurchaseItemServiceImpl implements PurchaseItemService {
         if (purchaseRepository.findByIdAndUser(dto.getPurchaseId(), userId) == null) {
             throw new ApiException("Purchase not found", 404);
         }
+
+        // padroniza o nome do produto (trim, espaços colapsados, Title Case)
+        // aqui, no service, para valer tanto pra quem usa a tela quanto pra
+        // quem eventualmente bater direto na API
+        dto.setProductName(TextNormalizer.normalizeProductName(dto.getProductName()));
 
         BigDecimal subtotal = calculateSubtotal(dto);
 
@@ -62,6 +68,7 @@ public class PurchaseItemServiceImpl implements PurchaseItemService {
         }
 
         validatePurchaseItem(dto);
+        dto.setProductName(TextNormalizer.normalizeProductName(dto.getProductName()));
         BigDecimal subtotal = calculateSubtotal(dto);
 
         purchaseItem.setPurchaseId(dto.getPurchaseId());
@@ -98,6 +105,11 @@ public class PurchaseItemServiceImpl implements PurchaseItemService {
             throw new ApiException("Purchase item not found", 404);
         }
         return item;
+    }
+
+    @Override
+    public List<String> findDistinctProductNames(Integer userId) {
+        return purchaseItemRepository.findDistinctProductNamesByUser(userId);
     }
 
     private void validatePurchaseItem(CreatePurchaseItemDTO dto) {

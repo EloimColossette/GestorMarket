@@ -15,4 +15,6 @@ public interface PurchaseItemService {
     void updatePurchaseItem(Integer purchaseItemsId, CreatePurchaseItemDTO dto, Integer userId);
 
     void deletePurchaseItem(Integer purchaseItemsId, Integer userId);
+
+    List<String> findDistinctProductNames(Integer userId);
 }

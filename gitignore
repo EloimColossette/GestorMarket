@@ -1,0 +1,24 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Build
+out/
+
+# Env (SEGURANÇA)
+.env
+
+# OS
+.DS_Store
+
+target/
+*.class
+
+# Python venv (gerado localmente, nunca commitado)
+.venv/
+__pycache__/
+*.pyc
+
+# Backups de banco de dados (podem conter dados sensíveis)
+backup-fedora/
+*.backup

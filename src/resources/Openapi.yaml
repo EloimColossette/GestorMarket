@@ -1,0 +1,1041 @@
+openapi: 3.0.3
+info:
+  title: GestorMarket API
+  description: |
+    API do GestorMaket: cadastro de usuários, supermercados, compras e
+    itens de compra, além de um serviço de analytics (Python) exposto via
+    proxy em `/api/analytics/*`.
+
+    ### Autenticação
+    A maioria das rotas exige um JWT enviado no header `Authorization: Bearer <token>`.
+    O token é obtido em `POST /login` e tem validade de 2 horas.
+    A cada requisição autenticada bem-sucedida, o servidor devolve um token
+    renovado no header de resposta `X-Refreshed-Token` — o front pode usá-lo
+    para substituir o token atual e evitar que a sessão expire.
+
+    ### Rotas públicas (sem token)
+    - `POST /login`
+    - `POST /users` (cadastro)
+    - `POST /password/forgot-password`
+    - `POST /password/reset-password`
+    - `GET /api/analytics/health`
+
+    ### Padrão de respostas
+    Algumas rotas (login, usuários, recuperação de senha) respondem no
+    envelope `ApiResponse` (`success` / `message` / `data`). Outras rotas
+    (supermercados, compras, itens de compra) respondem o JSON "cru"
+    (lista/objeto) em caso de sucesso, ou uma mensagem de erro em texto
+    simples com o status HTTP correspondente.
+  version: "1.0.0"
+  contact:
+    name: GestorMarket
+
+servers:
+  - url: http://localhost:8080
+    description: Servidor local (Java, porta 8080 — inclui o proxy para o serviço de analytics em Python)
+
+tags:
+  - name: Auth
+    description: Login
+  - name: Users
+    description: Cadastro e gerenciamento do próprio usuário
+  - name: Password Reset
+    description: Recuperação de senha por e-mail
+  - name: Supermarkets
+    description: Supermercados cadastrados pelo usuário
+  - name: Purchases
+    description: Compras e relatórios de compras
+  - name: Purchase Items
+    description: Itens de uma compra
+  - name: Analytics
+    description: >
+      Serviço de analytics (Python), acessado através do proxy Java em
+      `/api/analytics/*`. Usa o mesmo JWT das demais rotas (exceto /health).
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ─────────────────────────────────────────────────────────
+  # AUTH
+  # ─────────────────────────────────────────────────────────
+  /login:
+    post:
+      tags: [Auth]
+      summary: Autentica o usuário e retorna um JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: usuario@exemplo.com
+                password:
+                  type: string
+                  format: password
+                  example: minhaSenha123
+      responses:
+        "200":
+          description: Login realizado com sucesso — `data` contém o JWT
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: string
+                        description: Token JWT
+                        example: eyJhbGciOiJIUzI1NiJ9...
+        "400":
+          description: Email e/ou senha não informados
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "401":
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+
+  # ─────────────────────────────────────────────────────────
+  # USERS
+  # ─────────────────────────────────────────────────────────
+  /users:
+    get:
+      tags: [Users]
+      summary: Retorna o perfil do usuário autenticado
+      responses:
+        "200":
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/UserResponse" }
+        "401":
+          description: Token ausente ou inválido
+    post:
+      tags: [Users]
+      summary: Cadastra um novo usuário
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserRequest" }
+      responses:
+        "201":
+          description: Usuário criado com sucesso
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "400":
+          description: "Dados inválidos (ex.: e-mail já cadastrado, campos obrigatórios ausentes)"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+
+  /users/{id}:
+    parameters:
+      - $ref: "#/components/parameters/UserId"
+    put:
+      tags: [Users]
+      summary: Atualiza o usuário (completo)
+      description: Só é permitido atualizar o próprio usuário (`id` precisa ser igual ao usuário autenticado).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserRequest" }
+      responses:
+        "200":
+          description: Usuário atualizado com sucesso
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      tags: [Users]
+      summary: Atualiza o usuário (parcial)
+      description: Só é permitido atualizar o próprio usuário (`id` precisa ser igual ao usuário autenticado). Envie apenas os campos que deseja alterar.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserRequest" }
+      responses:
+        "200":
+          description: Usuário atualizado parcialmente com sucesso
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    delete:
+      tags: [Users]
+      summary: Exclui o usuário
+      description: Só é permitido excluir o próprio usuário (`id` precisa ser igual ao usuário autenticado).
+      responses:
+        "200":
+          description: Usuário excluído com sucesso
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  # ─────────────────────────────────────────────────────────
+  # PASSWORD RESET
+  # ─────────────────────────────────────────────────────────
+  /password/forgot-password:
+    post:
+      tags: [Password Reset]
+      summary: Solicita o link de recuperação de senha por e-mail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        "200":
+          description: Link de recuperação enviado (a resposta é sempre 200, mesmo se o e-mail não existir, para não vazar quais e-mails estão cadastrados)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "400":
+          description: E-mail não informado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+
+  /password/reset-password:
+    post:
+      tags: [Password Reset]
+      summary: Redefine a senha usando o token recebido por e-mail
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                  description: Token enviado por e-mail em forgot-password
+                newPassword:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Senha redefinida com sucesso
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+        "400":
+          description: Token/senha ausentes, token inválido ou expirado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResponse" }
+
+  # ─────────────────────────────────────────────────────────
+  # SUPERMARKETS
+  # ─────────────────────────────────────────────────────────
+  /supermarkets:
+    get:
+      tags: [Supermarkets]
+      summary: Lista os supermercados do usuário autenticado
+      responses:
+        "200":
+          description: Lista de supermercados
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupermarketModel" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Supermarkets]
+      summary: Cadastra um novo supermercado (vinculado ao usuário autenticado)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateSupermarketDTO" }
+      responses:
+        "201":
+          description: "Supermarket created successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /supermarkets/{id}:
+    parameters:
+      - $ref: "#/components/parameters/SupermarketId"
+    put:
+      tags: [Supermarkets]
+      summary: Atualiza um supermercado do usuário autenticado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateSupermarketDTO" }
+      responses:
+        "200":
+          description: "Supermarket updated successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Supermarkets]
+      summary: Exclui um supermercado do usuário autenticado
+      responses:
+        "200":
+          description: "Supermarket deleted successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # ─────────────────────────────────────────────────────────
+  # PURCHASES
+  # ─────────────────────────────────────────────────────────
+  /purchases:
+    get:
+      tags: [Purchases]
+      summary: Lista compras do usuário (ou gera um relatório filtrado)
+      description: >
+        Se nenhum filtro (`supermarket`, `startDate`, `endDate`) for informado,
+        retorna a lista simples de compras (`PurchaseModel[]`). Se qualquer um
+        dos filtros for informado, retorna um relatório filtrado
+        (`PurchaseReportItem[]`) com o nome do supermercado incluído.
+      parameters:
+        - name: supermarket
+          in: query
+          description: Filtra pelo nome do supermercado (ativa o modo relatório)
+          schema: { type: string }
+        - name: startDate
+          in: query
+          description: Data inicial (AAAA-MM-DD, ativa o modo relatório)
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          description: Data final (AAAA-MM-DD, ativa o modo relatório)
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Lista de compras, ou relatório filtrado
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: "#/components/schemas/PurchaseModel" }
+                  - type: array
+                    items: { $ref: "#/components/schemas/PurchaseReportItem" }
+        "400":
+          description: Formato de data inválido
+          content:
+            text/plain: { schema: { type: string } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Purchases]
+      summary: Cria uma nova compra (com os itens já inclusos)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePurchaseDTO" }
+      responses:
+        "201":
+          description: "Purchase created successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /purchases/summary:
+    get:
+      tags: [Purchases]
+      summary: Resumo de gasto agrupado por supermercado
+      parameters:
+        - name: supermarketId
+          in: query
+          schema: { type: integer }
+        - name: date
+          in: query
+          description: Filtra por data específica (AAAA-MM-DD)
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Resumo por supermercado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupermarketSummaryDTO" }
+        "400":
+          description: ID de supermercado ou data inválidos
+          content:
+            text/plain: { schema: { type: string } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /purchases/detail:
+    get:
+      tags: [Purchases]
+      summary: Detalhe das compras (com os itens de cada uma)
+      parameters:
+        - name: supermarketId
+          in: query
+          schema: { type: integer }
+        - name: date
+          in: query
+          description: Filtra por data específica (AAAA-MM-DD)
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Compras com seus itens
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PurchaseDetailDTO" }
+        "400":
+          description: ID de supermercado ou data inválidos
+          content:
+            text/plain: { schema: { type: string } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /purchases/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseId"
+    put:
+      tags: [Purchases]
+      summary: Atualiza uma compra existente (e reescreve seus itens)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePurchaseDTO" }
+      responses:
+        "200":
+          description: "Purchase updated successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Purchases]
+      summary: Exclui uma compra
+      responses:
+        "200":
+          description: "Purchase deleted successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # ─────────────────────────────────────────────────────────
+  # PURCHASE ITEMS
+  # ─────────────────────────────────────────────────────────
+  /purchase-items:
+    get:
+      tags: [Purchase Items]
+      summary: Lista todos os itens de compra do usuário autenticado
+      responses:
+        "200":
+          description: Lista de itens de compra
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PurchaseItemModel" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      tags: [Purchase Items]
+      summary: Adiciona um item a uma compra existente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePurchaseItemDTO" }
+      responses:
+        "201":
+          description: "Purchase item created successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /purchase-items/product-names:
+    get:
+      tags: [Purchase Items]
+      summary: Lista nomes de produto distintos já usados pelo usuário (autocomplete)
+      responses:
+        "200":
+          description: Lista de nomes de produto
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /purchase-items/{id}:
+    parameters:
+      - $ref: "#/components/parameters/PurchaseItemId"
+    put:
+      tags: [Purchase Items]
+      summary: Atualiza um item de compra
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreatePurchaseItemDTO" }
+      responses:
+        "200":
+          description: "Purchase item updated successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    delete:
+      tags: [Purchase Items]
+      summary: Exclui um item de compra
+      responses:
+        "200":
+          description: "Purchase item deleted successfully"
+          content:
+            text/plain: { schema: { type: string } }
+        "400": { $ref: "#/components/responses/BadRequestPlainText" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # ─────────────────────────────────────────────────────────
+  # ANALYTICS (proxy Java -> serviço Python em python_analytics/)
+  # ─────────────────────────────────────────────────────────
+  /api/analytics/health:
+    get:
+      tags: [Analytics]
+      summary: Healthcheck do serviço de analytics (não exige token)
+      security: []
+      responses:
+        "200":
+          description: Serviço no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /api/analytics/supermercados:
+    get:
+      tags: [Analytics]
+      summary: Lista de supermercados do usuário (para popular filtros)
+      responses:
+        "200":
+          description: Lista de supermercados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  supermercados:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        nome: { type: string }
+
+  /api/analytics/produtos:
+    get:
+      tags: [Analytics]
+      summary: Busca/autocomplete de nomes de produto já comprados
+      parameters:
+        - name: busca
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Lista de produtos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  produtos:
+                    type: array
+                    items: { type: string }
+
+  /api/analytics/gasto-mensal:
+    get:
+      tags: [Analytics]
+      summary: Gasto agrupado por mês
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsMeses"
+        - $ref: "#/components/parameters/AnalyticsDataInicio"
+        - $ref: "#/components/parameters/AnalyticsDataFim"
+        - $ref: "#/components/parameters/AnalyticsSupermercadoId"
+      responses:
+        "200":
+          description: Gasto mensal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GastoMensal" }
+
+  /api/analytics/previsao:
+    get:
+      tags: [Analytics]
+      summary: Previsão de gasto futuro (regressão linear simples)
+      parameters:
+        - name: meses_futuros
+          in: query
+          schema: { type: integer, default: 3 }
+        - $ref: "#/components/parameters/AnalyticsDataInicio"
+        - $ref: "#/components/parameters/AnalyticsDataFim"
+        - $ref: "#/components/parameters/AnalyticsSupermercadoId"
+      responses:
+        "200":
+          description: Previsão de gastos futuros
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  labels: { type: array, items: { type: string } }
+                  previsao: { type: array, items: { type: number, format: float } }
+                  metodo: { type: string, enum: [sem_dados, media_simples, regressao_linear] }
+                  confiabilidade: { type: string, enum: [baixa, media, alta] }
+                  tendencia: { type: string, enum: [subindo, caindo, estavel] }
+                  variacao_mensal_estimada: { type: number, format: float }
+                  observacao: { type: string }
+
+  /api/analytics/por-supermercado:
+    get:
+      tags: [Analytics]
+      summary: Gasto total, quantidade de compras e ticket médio por supermercado
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsDataInicio"
+        - $ref: "#/components/parameters/AnalyticsDataFim"
+      responses:
+        "200":
+          description: Gasto por supermercado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GastoPorSupermercado" }
+
+  /api/analytics/por-produto:
+    get:
+      tags: [Analytics]
+      summary: Gasto por produto (top N)
+      parameters:
+        - name: limite
+          in: query
+          schema: { type: integer, default: 10 }
+        - $ref: "#/components/parameters/AnalyticsDataInicio"
+        - $ref: "#/components/parameters/AnalyticsDataFim"
+        - $ref: "#/components/parameters/AnalyticsSupermercadoId"
+      responses:
+        "200":
+          description: Gasto por produto
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/GastoPorProduto" }
+
+  /api/analytics/promocoes:
+    get:
+      tags: [Analytics]
+      summary: Percentual de itens em promoção por supermercado
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsDataInicio"
+        - $ref: "#/components/parameters/AnalyticsDataFim"
+        - $ref: "#/components/parameters/AnalyticsSupermercadoId"
+      responses:
+        "200":
+          description: Promoções por supermercado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PromocaoPorSupermercado" }
+
+  /api/analytics/produto/historico:
+    get:
+      tags: [Analytics]
+      summary: Histórico de preço de um produto específico
+      parameters:
+        - name: produto
+          in: query
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/AnalyticsDataInicio"
+        - $ref: "#/components/parameters/AnalyticsDataFim"
+        - $ref: "#/components/parameters/AnalyticsSupermercadoId"
+      responses:
+        "200":
+          description: Histórico de preço (ou erro de validação se `produto` não for informado)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HistoricoProduto" }
+
+  /api/analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Agrega todos os indicadores acima em uma única resposta (usado pela tela de gráficos)
+      parameters:
+        - $ref: "#/components/parameters/AnalyticsMeses"
+        - name: meses_futuros
+          in: query
+          schema: { type: integer, default: 3 }
+        - name: top_produtos
+          in: query
+          schema: { type: integer, default: 10 }
+        - name: produto
+          in: query
+          description: Se informado, inclui também o histórico de preço deste produto
+          schema: { type: string }
+        - $ref: "#/components/parameters/AnalyticsDataInicio"
+        - $ref: "#/components/parameters/AnalyticsDataFim"
+        - $ref: "#/components/parameters/AnalyticsSupermercadoId"
+      responses:
+        "200":
+          description: Dashboard completo (inclui gráficos em base64)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gasto_mensal: { $ref: "#/components/schemas/GastoMensal" }
+                  previsao: { type: object }
+                  por_supermercado:
+                    type: array
+                    items: { $ref: "#/components/schemas/GastoPorSupermercado" }
+                  por_produto:
+                    type: array
+                    items: { $ref: "#/components/schemas/GastoPorProduto" }
+                  promocoes:
+                    type: array
+                    items: { $ref: "#/components/schemas/PromocaoPorSupermercado" }
+                  graficos_base64:
+                    type: object
+                    description: Imagens dos gráficos (PNG) já prontas, codificadas em base64
+                    additionalProperties: { type: string, format: byte }
+                  historico_produto:
+                    $ref: "#/components/schemas/HistoricoProduto"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Token obtido em `POST /login`. Envie como
+        `Authorization: Bearer <token>`.
+
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    SupermarketId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    PurchaseId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    PurchaseItemId:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    AnalyticsMeses:
+      name: meses
+      in: query
+      description: Quantidade de meses (incluindo o atual) a retornar
+      schema: { type: integer, default: 6 }
+    AnalyticsDataInicio:
+      name: data_inicio
+      in: query
+      description: Filtro de data inicial (AAAA-MM-DD)
+      schema: { type: string, format: date }
+    AnalyticsDataFim:
+      name: data_fim
+      in: query
+      description: Filtro de data final (AAAA-MM-DD)
+      schema: { type: string, format: date }
+    AnalyticsSupermercadoId:
+      name: supermercado_id
+      in: query
+      schema: { type: integer }
+
+  responses:
+    BadRequest:
+      description: Requisição inválida
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiResponse" }
+    BadRequestPlainText:
+      description: Requisição inválida
+      content:
+        text/plain: { schema: { type: string } }
+    Unauthorized:
+      description: Token ausente, inválido ou expirado
+      content:
+        text/plain: { schema: { type: string } }
+    Forbidden:
+      description: "Usuário autenticado não tem permissão sobre este recurso (ex.: tentar alterar outro usuário)"
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiResponse" }
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data: {}
+
+    UserRequest:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        firstName: { type: string }
+        lastName: { type: string }
+        cpf: { type: string }
+        phoneNumber: { type: string }
+
+    UserResponse:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string, format: email }
+        firstName: { type: string }
+        lastName: { type: string }
+        cpf: { type: string }
+        phoneNumber: { type: string }
+
+    SupermarketModel:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        userId: { type: integer }
+
+    CreateSupermarketDTO:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        address: { type: string }
+
+    PurchaseModel:
+      type: object
+      properties:
+        purchasesId: { type: integer }
+        supermarketId: { type: integer }
+        purchaseDate: { type: string, format: date }
+        total: { type: number, format: double }
+
+    PurchaseReportItem:
+      type: object
+      properties:
+        purchasesId: { type: integer }
+        supermarketName: { type: string }
+        purchaseDate: { type: string, format: date }
+        total: { type: number, format: double }
+
+    SupermarketSummaryDTO:
+      type: object
+      properties:
+        supermarketId: { type: integer }
+        supermarketName: { type: string }
+        total: { type: number, format: double }
+
+    PurchaseDetailDTO:
+      type: object
+      properties:
+        purchasesId: { type: integer }
+        purchaseDate: { type: string, format: date }
+        total: { type: number, format: double }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/PurchaseItemDetailDTO" }
+
+    PurchaseItemDetailDTO:
+      type: object
+      properties:
+        productName: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: number, format: double }
+        promotionActive: { type: boolean }
+        promotionType: { type: string }
+        promotionDescription: { type: string }
+        subtotal: { type: number, format: double }
+
+    CreatePurchaseDTO:
+      type: object
+      required: [purchaseDate, supermarketId, items]
+      properties:
+        purchaseDate: { type: string, format: date }
+        supermarketId: { type: integer }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CreatePurchaseItemDTO" }
+
+    CreatePurchaseItemDTO:
+      type: object
+      required: [productName, quantity, unitPrice]
+      properties:
+        purchaseId:
+          type: integer
+          description: Necessário ao adicionar um item a uma compra já existente (POST /purchase-items)
+        productName: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: number, format: double }
+        promotionActive: { type: boolean }
+        promotionType:
+          type: string
+          description: 'Tipo de promoção aplicada, ex.: "leve_pague", "percentual", "valor_fixo"'
+        promotionDescription: { type: string }
+        promotionBuyQuantity:
+          type: integer
+          description: 'Usado quando promotionType="leve_pague" (ex.: Leve 3)'
+        promotionPayQuantity:
+          type: integer
+          description: 'Usado quando promotionType="leve_pague" (ex.: Pague 2)'
+        promotionPercent:
+          type: number
+          format: double
+          description: 'Usado quando promotionType="percentual" (ex.: 10 = 10%)'
+        promotionDiscountValue:
+          type: number
+          format: double
+          description: 'Usado quando promotionType="valor_fixo" (desconto em R$ sobre o total do item)'
+
+    PurchaseItemModel:
+      type: object
+      properties:
+        purchaseItemsId: { type: integer }
+        purchaseId: { type: integer }
+        productName: { type: string }
+        quantity: { type: integer }
+        unitPrice: { type: number, format: double }
+        promotionActive: { type: boolean }
+        promotionType: { type: string }
+        promotionDescription: { type: string }
+        subtotal: { type: number, format: double }
+
+    GastoMensal:
+      type: object
+      properties:
+        labels:
+          type: array
+          items: { type: string }
+          example: ["2026-03", "2026-04", "2026-05"]
+        gastos:
+          type: array
+          items: { type: number, format: float }
+        mes_atual:
+          type: object
+          nullable: true
+          properties:
+            periodo: { type: string }
+            total: { type: number, format: float }
+        media_mensal: { type: number, format: float }
+
+    GastoPorSupermercado:
+      type: object
+      properties:
+        supermercado: { type: string }
+        total_gasto: { type: number, format: float }
+        qtd_compras: { type: integer }
+        ticket_medio: { type: number, format: float }
+
+    GastoPorProduto:
+      type: object
+      properties:
+        produto: { type: string }
+        total_gasto: { type: number, format: float }
+        quantidade_total: { type: integer }
+        preco_medio: { type: number, format: float }
+        qtd_compras: { type: integer }
+
+    PromocaoPorSupermercado:
+      type: object
+      properties:
+        supermercado: { type: string }
+        total_itens: { type: integer }
+        itens_promocao: { type: integer }
+        percentual_promocao: { type: number, format: float }
+        gasto_em_promocao: { type: number, format: float }
+
+    HistoricoProduto:
+      type: object
+      properties:
+        labels:
+          type: array
+          items: { type: string }
+        precos:
+          type: array
+          items: { type: number, format: float }
+        supermercados:
+          type: array
+          items: { type: string }
+        resumo:
+          type: object
+          nullable: true
+          properties:
+            produto: { type: string }
+            preco_minimo: { type: number, format: float }
+            preco_maximo: { type: number, format: float }
+            preco_medio: { type: number, format: float }
+            preco_atual: { type: number, format: float }
+            variacao_pct: { type: number, format: float }
+            qtd_compras: { type: integer }
+            mercado_mais_barato: { type: string }
+        grafico_base64:
+          type: string
+          format: byte
+          description: Só presente na rota /produto/historico (imagem PNG do gráfico, em base64)
+        erro_validacao:
+          type: string
+          description: Presente quando o parâmetro `produto` não foi informado

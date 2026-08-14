@@ -27,11 +27,36 @@
         <!-- FILTROS -->
         <div class="chart-filters">
             <div class="field">
+                <label for="filterSupermercado">Supermercado</label>
+                <select id="filterSupermercado">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="filterProduto">Produto</label>
+                <input id="filterProduto" type="text" placeholder="Todos os produtos"
+                       list="produtoSuggestions" autocomplete="off" />
+                <datalist id="produtoSuggestions"></datalist>
+            </div>
+
+            <div class="field">
+                <label for="filterDataInicio">De</label>
+                <input id="filterDataInicio" type="date" />
+            </div>
+
+            <div class="field">
+                <label for="filterDataFim">Até</label>
+                <input id="filterDataFim" type="date" />
+            </div>
+
+            <div class="field">
                 <label for="filterMeses">Meses de histórico</label>
                 <select id="filterMeses">
                     <option value="3">3 meses</option>
                     <option value="6" selected>6 meses</option>
                     <option value="12">12 meses</option>
+                    <option value="24">24 meses</option>
                 </select>
             </div>
 
@@ -56,6 +81,7 @@
 
         <div class="chart-filters-actions">
             <button class="primary-btn" onclick="loadDashboard()">📊 Atualizar</button>
+            <button class="secondary-btn" onclick="limparFiltros()">✕ Limpar filtros</button>
         </div>
 
         <!-- ESTADO: CARREGANDO -->
@@ -83,6 +109,15 @@
                 <h2>📈 Gasto mensal — histórico e previsão</h2>
                 <div class="chart-container">
                     <img id="img-gasto_mensal_previsao" alt="Gasto mensal com previsão">
+                </div>
+            </div>
+
+            <!-- GRÁFICO: HISTÓRICO DO PRODUTO FILTRADO -->
+            <div class="chart-section" id="section-historico_produto" style="display: none;">
+                <h2>🔎 Evolução de preço do produto</h2>
+                <div id="produtoResumoCards" class="stats-grid"></div>
+                <div class="chart-container">
+                    <img id="img-historico_produto" alt="Histórico de preço do produto">
                 </div>
             </div>
 

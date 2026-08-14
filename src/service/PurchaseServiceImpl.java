@@ -7,6 +7,7 @@ import model.PurchaseModel;
 import repository.PurchaseItemRepository;
 import repository.PurchaseRepository;
 import repository.SupermarketRepository;
+import util.TextNormalizer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -66,6 +67,11 @@ public class PurchaseServiceImpl implements PurchaseService {
 
                 validatePurchaseItem(itemDTO);
 
+                // padroniza o nome do produto antes de gravar (trim, espaços
+                // colapsados, Title Case) -- evita "arroz"/"Arroz "/"ARROZ"
+                // virarem registros diferentes e melhora o autocomplete
+                itemDTO.setProductName(TextNormalizer.normalizeProductName(itemDTO.getProductName()));
+
                 BigDecimal subtotal = calculateSubtotal(itemDTO);
 
                 PurchaseItemModel purchaseItem = new PurchaseItemModel();
@@ -101,11 +107,6 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchaseRepository.update(purchaseModel, userId); // ✅ corrigido: agora passa userId
     }
 
-    /**
-     * Calcula o subtotal do item aplicando o desconto da promoção,
-     * de acordo com o tipo escolhido. Se não houver promoção ativa,
-     * o subtotal é simplesmente quantidade x preço unitário.
-     */
     private BigDecimal calculateSubtotal(
             CreatePurchaseItemDTO itemDTO
     ) {
@@ -199,10 +200,6 @@ public class PurchaseServiceImpl implements PurchaseService {
         };
     }
 
-    /**
-     * Monta um texto legível para salvar na coluna promotion_type,
-     * a partir dos valores escolhidos pelo usuário.
-     */
     private String buildPromotionLabel(
             CreatePurchaseItemDTO itemDTO
     ) {

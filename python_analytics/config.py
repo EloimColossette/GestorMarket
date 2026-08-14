@@ -2,9 +2,6 @@ import os
 import re
 from urllib.parse import quote_plus
 
-# Ajuste este caminho se necessario. Por padrao, assume que esta pasta
-# "python_analytics" foi colocada DENTRO da pasta raiz do projeto SistemaCompras
-# (mesmo nivel do .env, do "src" e do "public").
 ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
 
 
@@ -73,12 +70,13 @@ JWT_SECRET = get_env("JWT_SECRET")
 JWT_ISSUER = "SistemaCompras"
 JWT_ALGORITHM = "HS256"
 
-# Porta em que este servico Python vai rodar (independente do Java, que usa 8080)
+
 ANALYTICS_SERVICE_PORT = int(get_env("ANALYTICS_SERVICE_PORT", "8000"))
 
-# Mesma(s) origem(ns) permitida(s) configurada(s) no backend Java (CORS).
-# Pode ser "*" (libera geral) ou uma lista separada por virgula, ex:
-# ALLOWED_ORIGIN=https://meu-ngrok.app,http://localhost:8080
+
+ANALYTICS_CACHE_TTL_SECONDS = int(get_env("ANALYTICS_CACHE_TTL_SECONDS", "30"))
+
+
 _raw_allowed_origin = get_env("ALLOWED_ORIGIN", "*")
 
 if _raw_allowed_origin.strip() == "*":

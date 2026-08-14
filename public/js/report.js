@@ -91,14 +91,17 @@ function renderSummary(summary, date) {
         const div = document.createElement("div");
         div.className = "menu-card";
         div.style.cursor = "pointer";
-        div.onclick = () => openDetail(item.supermarketId, item.supermarketName, date);
+        div.addEventListener("click", () => openDetail(item.supermarketId, item.supermarketName, date));
 
+        // Estrutura fixa via innerHTML, texto do usuário via textContent (evita XSS)
         div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span>🏪 ${item.supermarketName}</span>
-                <strong>${formatCurrency(item.total)}</strong>
+                <span class="market-label">🏪 </span>
+                <strong class="market-total"></strong>
             </div>
         `;
+        div.querySelector(".market-label").append(item.supermarketName);
+        div.querySelector(".market-total").textContent = formatCurrency(item.total);
 
         container.appendChild(div);
     });
@@ -174,17 +177,26 @@ function renderDetail(purchases, supermarketName) {
             const div = document.createElement("div");
             div.className = "item-card";
 
-            const promoBadge = item.promotionActive
-                ? `<div class="item-card-promo">🏷️ ${item.promotionType || "Promoção ativa"}</div>`
-                : `<div class="item-card-promo">Sem promoção</div>`;
-
+            // Estrutura fixa via innerHTML; qualquer texto vindo do
+            // usuário (nome do produto, tipo de promoção) é setado depois
+            // via textContent, que nunca é interpretado como HTML/JS.
             div.innerHTML = `
                 <div class="item-card-info">
-                    <span>${item.productName} — ${item.quantity}x ${formatCurrency(item.unitPrice)}</span>
-                    ${promoBadge}
+                    <span class="item-name-line"></span>
+                    <div class="item-card-promo"></div>
                 </div>
-                <div class="item-card-subtotal">${formatCurrency(item.subtotal)}</div>
+                <div class="item-card-subtotal"></div>
             `;
+
+            div.querySelector(".item-name-line").textContent =
+                `${item.productName} — ${item.quantity}x ${formatCurrency(item.unitPrice)}`;
+
+            const promoEl = div.querySelector(".item-card-promo");
+            promoEl.textContent = item.promotionActive
+                ? `🏷️ ${item.promotionType || "Promoção ativa"}`
+                : "Sem promoção";
+
+            div.querySelector(".item-card-subtotal").textContent = formatCurrency(item.subtotal);
 
             container.appendChild(div);
         });

@@ -7,10 +7,14 @@ import pandas as pd
 # ────────────────────────────────────────────────────────────
 # 1) GASTO POR MES (historico + mes atual)
 # ────────────────────────────────────────────────────────────
-def gasto_mensal(purchases_df: pd.DataFrame, meses: int = 6) -> dict:
+def gasto_mensal(purchases_df: pd.DataFrame, meses: int = 6, limitar: bool = True) -> dict:
     """
     Agrupa o total gasto por mes (ano-mes) e separa o mes atual dos meses
     anteriores. Retorna os ultimos `meses` meses com dado (incluindo o atual).
+
+    `limitar=False` é usado quando o próprio filtro de data (data_inicio/
+    data_fim) já delimitou o período no banco — nesse caso mostramos o
+    período inteiro, sem cortar para os últimos N meses.
     """
     if purchases_df.empty:
         return {"labels": [], "gastos": [], "mes_atual": None, "media_mensal": 0.0}
@@ -19,7 +23,8 @@ def gasto_mensal(purchases_df: pd.DataFrame, meses: int = 6) -> dict:
     df["ano_mes"] = df["purchase_date"].dt.to_period("M")
 
     resumo = df.groupby("ano_mes")["total"].sum().sort_index()
-    resumo = resumo.tail(meses)
+    if limitar:
+        resumo = resumo.tail(meses)
 
     hoje_periodo = pd.Period(date.today(), freq="M")
 
@@ -186,7 +191,7 @@ def promocoes_por_supermercado(items_df: pd.DataFrame) -> list:
     resumo["itens_promocao"] = resumo["itens_promocao"].astype(int)
     resumo["gasto_em_promocao"] = resumo["gasto_em_promocao"].astype(float)
     resumo["percentual_promocao"] = (
-        resumo["itens_promocao"] / resumo["total_itens"] * 100
+            resumo["itens_promocao"] / resumo["total_itens"] * 100
     ).round(1)
 
     resumo = resumo.sort_values("percentual_promocao", ascending=False).reset_index()
@@ -201,3 +206,47 @@ def promocoes_por_supermercado(items_df: pd.DataFrame) -> list:
         }
         for _, row in resumo.iterrows()
     ]
+
+
+# ────────────────────────────────────────────────────────────
+# 6) HISTORICO DE PRECO DE UM PRODUTO ESPECIFICO
+# ────────────────────────────────────────────────────────────
+def historico_produto(items_df: pd.DataFrame) -> dict:
+    """
+    Para um `items_df` já filtrado por um produto (via product_name no
+    database.py), monta a evolução do preço unitário compra a compra e
+    um resumo (preço mínimo, máximo, médio e variação desde a 1a compra).
+    """
+    if items_df.empty:
+        return {"labels": [], "precos": [], "resumo": None}
+
+    df = items_df.sort_values("purchase_date").copy()
+
+    labels = [d.strftime("%d/%m/%Y") for d in df["purchase_date"]]
+    precos = [round(float(v), 2) for v in df["unit_price"]]
+    supermercados = list(df["supermarket_name"])
+
+    preco_inicial = precos[0]
+    preco_atual = precos[-1]
+    variacao_pct = (
+        round(((preco_atual - preco_inicial) / preco_inicial) * 100, 1)
+        if preco_inicial > 0 else 0.0
+    )
+
+    resumo = {
+        "produto": df["product_name"].iloc[0],
+        "preco_minimo": round(float(df["unit_price"].min()), 2),
+        "preco_maximo": round(float(df["unit_price"].max()), 2),
+        "preco_medio": round(float(df["unit_price"].mean()), 2),
+        "preco_atual": preco_atual,
+        "variacao_pct": variacao_pct,
+        "qtd_compras": int(len(df)),
+        "mercado_mais_barato": df.loc[df["unit_price"].idxmin(), "supermarket_name"],
+    }
+
+    return {
+        "labels": labels,
+        "precos": precos,
+        "supermercados": supermercados,
+        "resumo": resumo,
+    }

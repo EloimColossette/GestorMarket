@@ -50,6 +50,13 @@ public class RateLimitFilter extends Filter {
 
         attempts.add(now);
 
+        // Sem isso, todo IP que já passou por aqui uma vez fica pra sempre no
+        // mapa (mesmo com a lista de tentativas vazia) -> vazamento de memória
+        // lento em servidor de longa duração.
+        if (attemptsByIp.size() > 10_000) {
+            attemptsByIp.entrySet().removeIf(e -> e.getValue().isEmpty());
+        }
+
         chain.doFilter(exchange);
     }
 

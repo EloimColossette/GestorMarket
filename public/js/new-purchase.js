@@ -31,8 +31,60 @@ document.addEventListener("DOMContentLoaded", () => {
         new Date().toISOString().split("T")[0];
 
     loadSupermarkets();
+    loadProductNames();
     renderItems();
 });
+
+// ── PADRONIZA O NOME DO PRODUTO (mesma regra usada no backend) ──
+// trim + colapsa espaços duplicados + Title Case ("coca  cola" -> "Coca Cola")
+// Faz isso no front só para o usuário já ver o valor final antes de salvar;
+// quem garante o padrão de verdade é o backend (service).
+function normalizeProductName(value) {
+    if (!value) return value;
+
+    const collapsed = value.trim().replace(/\s+/g, " ");
+    let result = "";
+    let capitalizeNext = true;
+
+    for (const char of collapsed) {
+        if (/\p{L}/u.test(char)) {
+            result += capitalizeNext ? char.toUpperCase() : char.toLowerCase();
+            capitalizeNext = false;
+        } else {
+            result += char;
+            // depois de espaço ou hífen, a próxima letra também fica maiúscula
+            capitalizeNext = (char === " " || char === "-");
+        }
+    }
+
+    return result;
+}
+
+// ── CARREGA OS NOMES DE PRODUTO JÁ USADOS (PARA O AUTOCOMPLETE) ──
+async function loadProductNames() {
+
+    const datalist = document.getElementById("productNameOptions");
+
+    try {
+        const response = await fetch(API_URL + "/purchase-items/product-names", {
+            headers: authHeaders()
+        });
+
+        if (!response.ok) return; // autocomplete é só um "extra", não trava a tela
+
+        const productNames = await response.json();
+
+        datalist.innerHTML = "";
+        productNames.forEach(name => {
+            const option = document.createElement("option");
+            option.value = name;
+            datalist.appendChild(option);
+        });
+
+    } catch (err) {
+        console.error("Erro ao carregar sugestões de produto:", err);
+    }
+}
 
 // ── CARREGA OS SUPERMERCADOS JÁ CADASTRADOS NO <select> ──
 async function loadSupermarkets() {
@@ -153,7 +205,7 @@ function calculateSubtotal({
 // ── ADICIONA UM ITEM À LISTA LOCAL ───────────────────────
 window.addItem = function () {
 
-    const productName = document.getElementById("productName").value.trim();
+    const productName = normalizeProductName(document.getElementById("productName").value);
     const quantity     = parseInt(document.getElementById("quantity").value, 10);
     const unitPrice    = parseFloat(document.getElementById("unitPrice").value);
     const promotionActive = document.getElementById("promotionActive").checked;
@@ -276,36 +328,62 @@ function promotionLabel(item) {
 const INLINE_ITEMS_LIMIT = 5;
 
 // ── MONTA O HTML DE UM CARD DE ITEM ──────────────────────
-function buildItemCardHtml(item, index) {
+// Monta o card do item como elementos DOM reais, em vez de template string.
+// Nome do produto e descrição da promoção vêm do usuário, então usamos
+// sempre textContent para eles — nunca innerHTML/onclick com esses valores,
+// o que evita XSS armazenado (ex.: produto com nome "<img onerror=...>").
+function buildItemCardElement(item, index) {
 
-    return `
-        <div class="item-card">
-            <div class="item-card-info">
-                <span>${item.productName} — ${item.quantity}x R$ ${item.unitPrice.toFixed(2)}</span>
-                ${item.promotionActive
-                    ? `<span class="item-card-promo">🏷️ ${promotionLabel(item)}${item.promotionDescription ? " — " + item.promotionDescription : ""}</span>`
-                    : ""}
-            </div>
-            <div class="item-card-subtotal">R$ ${item.subtotal.toFixed(2)}</div>
-            <button class="remove-item-btn" onclick="removeItem(${index})">✕</button>
-        </div>
-    `;
+    const card = document.createElement("div");
+    card.className = "item-card";
+
+    const info = document.createElement("div");
+    info.className = "item-card-info";
+
+    const infoLine = document.createElement("span");
+    infoLine.textContent = `${item.productName} — ${item.quantity}x R$ ${item.unitPrice.toFixed(2)}`;
+    info.appendChild(infoLine);
+
+    if (item.promotionActive) {
+        const promo = document.createElement("span");
+        promo.className = "item-card-promo";
+        promo.textContent = "🏷️ " + promotionLabel(item)
+            + (item.promotionDescription ? " — " + item.promotionDescription : "");
+        info.appendChild(promo);
+    }
+
+    const subtotal = document.createElement("div");
+    subtotal.className = "item-card-subtotal";
+    subtotal.textContent = `R$ ${item.subtotal.toFixed(2)}`;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "remove-item-btn";
+    removeBtn.textContent = "✕";
+    removeBtn.addEventListener("click", () => removeItem(index));
+
+    card.appendChild(info);
+    card.appendChild(subtotal);
+    card.appendChild(removeBtn);
+
+    return card;
 }
 
 // ── RENDERIZA A LISTA DE ITENS E O TOTAL ─────────────────
 function renderItems() {
 
     let total = 0;
-    let itemsHtml = "";
+
+    const itemsList = document.getElementById("itemsList");
+    const itemsListModal = document.getElementById("itemsListModal");
+    itemsList.innerHTML = "";
+    itemsListModal.innerHTML = "";
 
     purchaseItems.forEach((item, index) => {
         total += item.subtotal;
-        itemsHtml += buildItemCardHtml(item, index);
+        // um node por container (não dá pra reaproveitar o mesmo elemento em dois lugares)
+        itemsList.appendChild(buildItemCardElement(item, index));
+        itemsListModal.appendChild(buildItemCardElement(item, index));
     });
-
-    // lista inline (só até o limite) e lista do modal (sempre completa)
-    document.getElementById("itemsList").innerHTML = itemsHtml;
-    document.getElementById("itemsListModal").innerHTML = itemsHtml;
 
     document.getElementById("totalDisplay").textContent =
         "Total: R$ " + total.toFixed(2);

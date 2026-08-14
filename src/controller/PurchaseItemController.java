@@ -37,8 +37,27 @@ public class PurchaseItemController implements HttpHandler {
     private void getAll(HttpExchange exchange) throws IOException {
         Integer userId = (Integer) exchange.getAttribute("authUserId");
 
+        String path = exchange.getRequestURI().getPath();
+
+        // GET /purchase-items/product-names -> lista de nomes de produto
+        // já usados por esse usuário (alimenta o autocomplete do front)
+        if (path.equals("/purchase-items/product-names")) {
+            getProductNames(exchange, userId);
+            return;
+        }
+
         List<PurchaseItemModel> items = purchaseItemService.findAllPurchaseItems(userId);
         String response = JsonUtil.getGson().toJson(items);
+
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);
+        exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
+        exchange.close();
+    }
+
+    private void getProductNames(HttpExchange exchange, Integer userId) throws IOException {
+        List<String> productNames = purchaseItemService.findDistinctProductNames(userId);
+        String response = JsonUtil.getGson().toJson(productNames);
 
         exchange.getResponseHeaders().add("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, response.getBytes(StandardCharsets.UTF_8).length);

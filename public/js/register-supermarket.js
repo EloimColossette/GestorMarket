@@ -89,32 +89,36 @@ async function loadSupermarkets() {
             const div = document.createElement("div");
             div.className = "glass-card";
 
+            // Estrutura fixa (sem dados do usuário) via innerHTML...
             div.innerHTML = `
                 <div class="card-content">
-
                     <div class="card-name">
                         <span class="market-icon">🏪</span>
-                        <span>${item.name}</span>
+                        <span class="market-name"></span>
                     </div>
-
                     <div class="card-id">
-                        ID: ${item.id}
+                        ID: <span class="market-id-value"></span>
                     </div>
-
                 </div>
 
                 <div class="card-actions">
-                    <button class="edit-btn"
-                            onclick="editSupermarket(${item.id}, '${item.name}')">
-                        ✏️ Editar
-                    </button>
-
-                    <button class="delete-btn"
-                            onclick="deleteSupermarket(${item.id})">
-                        🗑️ Excluir
-                    </button>
+                    <button class="edit-btn">✏️ Editar</button>
+                    <button class="delete-btn">🗑️ Excluir</button>
                 </div>
             `;
+
+            // ...e dados vindos do backend sempre via textContent,
+            // que nunca interpreta HTML/JS (evita XSS armazenado).
+            div.querySelector(".market-name").textContent = item.name;
+            div.querySelector(".market-id-value").textContent = item.id;
+
+            // Listeners em vez de onclick inline com string concatenada:
+            // não há como "escapar" do contexto e injetar JS.
+            div.querySelector(".edit-btn")
+                .addEventListener("click", () => editSupermarket(item.id, item.name));
+
+            div.querySelector(".delete-btn")
+                .addEventListener("click", () => deleteSupermarket(item.id));
 
             container.appendChild(div);
         });

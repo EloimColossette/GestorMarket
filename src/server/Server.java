@@ -3,6 +3,7 @@ package server;
 import com.sun.net.httpserver.HttpServer;
 import controller.*;
 
+import envloader.EnvLoader;
 import repository.*;
 import service.*;
 
@@ -11,6 +12,8 @@ import security.CorsFilter;
 import security.RateLimitFilter;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -88,11 +91,29 @@ public class Server {
             var ctxAnalytics = server.createContext("/api/analytics", new AnalyticsProxyHandler());
             ctxAnalytics.getFilters().add(new CorsFilter());
 
+            // Documentação da API (Swagger UI + spec OpenAPI) — só liga se
+            // ENABLE_DOCS=true no .env. Em produção geralmente deixamos
+            // desligado para não expor publicamente o spec completo da API.
+            if ("true".equalsIgnoreCase(EnvLoader.get("ENABLE_DOCS"))) {
+                DocsHandler docsHandler = new DocsHandler();
+
+                var ctxDocs = server.createContext("/docs", docsHandler);
+                ctxDocs.getFilters().add(new CorsFilter());
+
+                var ctxOpenapi = server.createContext("/openapi.yaml", docsHandler);
+                ctxOpenapi.getFilters().add(new CorsFilter());
+
+                logger.info("Documentação da API habilitada em /docs (ENABLE_DOCS=true)");
+            } else {
+                logger.info("Documentação da API desabilitada (defina ENABLE_DOCS=true no .env para habilitar)");
+            }
+
             // Static files — must be last (most generic path)
             server.createContext("/", new StaticFileHandler("public"))
                     .getFilters().add(new CorsFilter());
 
-            server.setExecutor(null);
+            ExecutorService executor = Executors.newFixedThreadPool(16);
+            server.setExecutor(executor);
             server.start();
 
             logger.info("Server running at http://localhost:8080");

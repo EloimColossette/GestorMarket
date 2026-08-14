@@ -6,91 +6,340 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class AnalyticsProcessLauncher {
 
-    private static final Logger logger = Logger.getLogger(AnalyticsProcessLauncher.class.getName());
+    private static final Logger logger =
+            Logger.getLogger(AnalyticsProcessLauncher.class.getName());
+
     private static Process pythonProcess;
 
     public static void start() {
-        Path analyticsDir = Paths.get("python_analytics").toAbsolutePath();
+
+        // ============================================================
+        // DIRETÓRIO DO PROJETO
+        // ============================================================
+
+        Path projectDir = Paths.get("")
+                .toAbsolutePath()
+                .normalize();
+
+        Path analyticsDir = projectDir.resolve("python_analytics");
+
         Path serverScript = analyticsDir.resolve("server.py");
 
+        Path pythonExecutable = projectDir
+                .resolve(".venv")
+                .resolve("bin")
+                .resolve("python")
+                .normalize();
+
+        // ============================================================
+        // VALIDAÇÕES
+        // ============================================================
+
+        logger.info("==================================================");
+        logger.info("INICIANDO SERVICO PYTHON");
+        logger.info("Projeto: " + projectDir);
+        logger.info("Python: " + pythonExecutable);
+        logger.info("Analytics: " + analyticsDir);
+        logger.info("Script: " + serverScript);
+        logger.info("==================================================");
+
         if (!Files.exists(serverScript)) {
-            logger.warning("python_analytics/server.py nao encontrado em " + analyticsDir
-                    + " — o servico de analytics (graficos) nao sera iniciado automaticamente. "
-                    + "Rode manualmente: cd python_analytics && python server.py");
+            logger.severe(
+                    "server.py nao encontrado: "
+                            + serverScript
+            );
             return;
         }
 
-        String pythonExecutable = findPythonExecutable();
-        if (pythonExecutable == null) {
-            logger.warning("Nenhum executavel Python (python3/python) encontrado no PATH. "
-                    + "O servico de analytics (graficos) nao sera iniciado automaticamente.");
+        if (!Files.exists(pythonExecutable)) {
+            logger.severe(
+                    "Python do .venv nao encontrado: "
+                            + pythonExecutable
+            );
+            return;
+        }
+
+        if (!Files.isExecutable(pythonExecutable)) {
+            logger.severe(
+                    "Python nao possui permissao de execucao: "
+                            + pythonExecutable
+            );
             return;
         }
 
         try {
-            ProcessBuilder builder = new ProcessBuilder(pythonExecutable, "server.py");
+
+            // ========================================================
+            // DETECTA SE ESTAMOS DENTRO DE FLATPAK
+            // ========================================================
+
+            boolean isFlatpak =
+                    Files.exists(Paths.get("/.flatpak-info"));
+
+            logger.info(
+                    "Executando dentro do Flatpak: "
+                            + isFlatpak
+            );
+
+            // ========================================================
+            // MONTA O COMANDO
+            // ========================================================
+
+            ProcessBuilder builder;
+
+            if (isFlatpak) {
+
+                /*
+                 * IntelliJ instalado via Flatpak.
+                 *
+                 * O Python do Fedora precisa ser executado fora
+                 * do sandbox através do flatpak-spawn --host.
+                 */
+
+                logger.info(
+                        "IntelliJ Flatpak detectado."
+                );
+
+                logger.info(
+                        "Usando flatpak-spawn --host."
+                );
+
+                builder = new ProcessBuilder(
+                        "/usr/bin/flatpak-spawn",
+                        "--host",
+                        pythonExecutable.toString(),
+                        serverScript.toString()
+                );
+
+            } else {
+
+                /*
+                 * Execucao normal fora do Flatpak.
+                 */
+
+                logger.info(
+                        "Executando fora do Flatpak."
+                );
+
+                builder = new ProcessBuilder(
+                        pythonExecutable.toString(),
+                        serverScript.toString()
+                );
+            }
+
+            // ========================================================
+            // DIRETÓRIO DE EXECUÇÃO
+            // ========================================================
+
             builder.directory(analyticsDir.toFile());
+
+            // Junta stdout + stderr
             builder.redirectErrorStream(true);
 
-            pythonProcess = builder.start();
-            logger.info("Servico de analytics (Python) iniciado com '" + pythonExecutable + "' em " + analyticsDir);
+            // ========================================================
+            // AMBIENTE
+            // ========================================================
 
-            // Encaminha a saida do processo Python para o log do Java (o server.py
-            // ja prefixa cada linha com "[python-analytics] ")
+            Map<String, String> environment =
+                    builder.environment();
+
+            /*
+             * Impede que configurações externas de Python
+             * interfiram no ambiente virtual.
+             */
+            environment.put(
+                    "PYTHONNOUSERSITE",
+                    "1"
+            );
+
+            /*
+             * Garante que o Python encontre os pacotes
+             * instalados no .venv.
+             */
+            environment.put(
+                    "VIRTUAL_ENV",
+                    projectDir
+                            .resolve(".venv")
+                            .toString()
+            );
+
+            /*
+             * Não herdamos PYTHONHOME.
+             */
+            environment.remove("PYTHONHOME");
+
+            /*
+             * Não deixamos PYTHONPATH externo interferir.
+             */
+            environment.remove("PYTHONPATH");
+
+            // ========================================================
+            // INICIA PYTHON
+            // ========================================================
+
+            pythonProcess = builder.start();
+
+            logger.info(
+                    "Servico de analytics (Python) iniciado."
+            );
+
+            logger.info(
+                    "PID do Python: "
+                            + pythonProcess.pid()
+            );
+
+            // ========================================================
+            // LÊ LOG DO PYTHON
+            // ========================================================
+
             Thread logThread = new Thread(() -> {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(pythonProcess.getInputStream()))) {
+
+                try (
+                        BufferedReader reader =
+                                new BufferedReader(
+                                        new InputStreamReader(
+                                                pythonProcess
+                                                        .getInputStream()
+                                        )
+                                )
+                ) {
+
                     String line;
-                    while ((line = reader.readLine()) != null) {
-                        logger.info(line);
+
+                    while (
+                            (line = reader.readLine()) != null
+                    ) {
+
+                        logger.info(
+                                "[python-analytics] "
+                                        + line
+                        );
                     }
-                } catch (IOException ignored) {
-                    // stream fechado quando o processo termina — esperado
+
+                } catch (IOException e) {
+
+                    if (
+                            pythonProcess != null
+                                    && pythonProcess.isAlive()
+                    ) {
+
+                        logger.log(
+                                Level.WARNING,
+                                "Erro ao ler saida do Python",
+                                e
+                        );
+                    }
                 }
+
             }, "analytics-log-forwarder");
+
             logThread.setDaemon(true);
             logThread.start();
 
-            // Garante que o processo Python morre junto com o Java
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                if (pythonProcess != null && pythonProcess.isAlive()) {
-                    logger.info("Encerrando servico de analytics (Python)...");
-                    pythonProcess.destroy();
-                    try {
-                        pythonProcess.waitFor();
-                    } catch (InterruptedException ignored) {
-                        Thread.currentThread().interrupt();
+            // ========================================================
+            // MONITORA PROCESSO
+            // ========================================================
+
+            Thread monitorThread = new Thread(() -> {
+
+                try {
+
+                    int exitCode =
+                            pythonProcess.waitFor();
+
+                    if (exitCode == 0) {
+
+                        logger.info(
+                                "Servico Python terminou normalmente."
+                        );
+
+                    } else {
+
+                        logger.warning(
+                                "Servico Python terminou. "
+                                        + "Codigo: "
+                                        + exitCode
+                        );
                     }
+
+                } catch (InterruptedException e) {
+
+                    Thread.currentThread().interrupt();
+
+                    logger.log(
+                            Level.WARNING,
+                            "Monitor do Python interrompido",
+                            e
+                    );
                 }
-            }, "analytics-shutdown-hook"));
+
+            }, "analytics-process-monitor");
+
+            monitorThread.setDaemon(true);
+            monitorThread.start();
+
+            // ========================================================
+            // SHUTDOWN HOOK
+            // ========================================================
+
+            Runtime.getRuntime().addShutdownHook(
+                    new Thread(() -> {
+
+                        if (
+                                pythonProcess != null
+                                        && pythonProcess.isAlive()
+                        ) {
+
+                            logger.info(
+                                    "Encerrando servico de analytics..."
+                            );
+
+                            pythonProcess.destroy();
+
+                            try {
+
+                                if (
+                                        !pythonProcess.waitFor(
+                                                5,
+                                                java.util.concurrent.TimeUnit.SECONDS
+                                        )
+                                ) {
+
+                                    logger.warning(
+                                            "Python nao encerrou. "
+                                                    + "Forcando encerramento."
+                                    );
+
+                                    pythonProcess.destroyForcibly();
+                                }
+
+                            } catch (InterruptedException e) {
+
+                                Thread.currentThread()
+                                        .interrupt();
+
+                                pythonProcess
+                                        .destroyForcibly();
+                            }
+                        }
+
+                    }, "analytics-shutdown-hook")
+            );
 
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Falha ao iniciar o servico de analytics (Python)", e);
-        }
-    }
 
-    /**
-     * Procura um executavel Python valido no PATH, testando "python3" primeiro
-     * (padrao em Linux/macOS) e depois "python" (padrao em Windows).
-     */
-    private static String findPythonExecutable() {
-        for (String candidate : new String[]{"python3", "python"}) {
-            try {
-                Process check = new ProcessBuilder(candidate, "--version")
-                        .redirectErrorStream(true)
-                        .start();
-                if (check.waitFor() == 0) {
-                    return candidate;
-                }
-            } catch (IOException | InterruptedException ignored) {
-                // tenta o proximo candidato
-            }
+            logger.log(
+                    Level.SEVERE,
+                    "Falha ao iniciar o servico de analytics (Python)",
+                    e
+            );
         }
-        return null;
     }
 }
+

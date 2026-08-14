@@ -233,6 +233,38 @@ public class PurchaseItemRepositoryImpl implements PurchaseItemRepository {
         }
     }
 
+    @Override
+    public List<String> findDistinctProductNamesByUser(Integer userId) {
+
+        List<String> productNames = new ArrayList<>();
+
+        String sql = """
+        SELECT DISTINCT pi.product_name
+        FROM purchase_items pi
+        JOIN purchases p     ON p.purchases_id = pi.purchase_id
+        JOIN supermarkets s  ON s.supermarkets_id = p.supermarket_id
+        WHERE s.user_id = ?
+        ORDER BY pi.product_name
+        """;
+
+        try (Connection conn = Database.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, userId);
+
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                while (resultSet.next()) {
+                    productNames.add(resultSet.getString("product_name"));
+                }
+            }
+
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error loading distinct product names", e);
+        }
+
+        return productNames;
+    }
+
     private PurchaseItemModel mapRow(ResultSet rs) throws SQLException {
         PurchaseItemModel purchaseItem = new PurchaseItemModel();
         purchaseItem.setPurchaseItemsId(rs.getInt("purchase_items_id"));
