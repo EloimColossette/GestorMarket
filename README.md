@@ -119,9 +119,3 @@ python_analytics/    # Serviço de analytics (Flask-like, biblioteca padrão)
 public/                # Frontend (HTML/CSS/JS estático)
 ```
 
-# GestorMarket
-Sistema de Compras para Supermercado e Controle Financeiro
-569197d71136b900c88c8a8500e2af27ca42bfd5
-
-
-b2bb85b4ec853c115e82b8dcaa56b64955094d97
