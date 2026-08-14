@@ -1,5 +1,5 @@
 
-# SistemaCompras
+# GestorMarket
 
 Sistema de controle de compras de supermercado: cadastro de usuários, supermercados, compras e itens de compra, com um serviço de **analytics em Python** (gráficos, previsão de gastos, histórico de preço por produto) acoplado ao backend Java.
 
